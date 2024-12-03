@@ -12,6 +12,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@react-router/node": "^7.0.1",
     "@react-router/serve": "^7.0.1",
+    "@tanstack/react-table": "^8.20.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "isbot": "^5.1.17",
@@ -28,10 +29,12 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
+    "fake-indexeddb": "^6.0.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
-    "vite-tsconfig-paths": "^5.1.2"
+    "vite-tsconfig-paths": "^5.1.2",
+    "vitest": "^2.1.8"
   }
 }

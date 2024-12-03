@@ -1,5 +1,6 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { HomePage } from "../home/HomePage";
+import { ClientLoaderFunctionArgs } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,6 +9,16 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+// export async function clientLoader({ location }: ClientLoaderFunctionArgs) {
+//   // call the server loader
+
+//   const serverData = await serverLoader();
+//   // And/or fetch data on the client
+//   const data = getDataFromClient();
+//   // Return the data to expose through useLoaderData()
+//   return data;
+// }
+
 export default function Home() {
-  return <Welcome />;
+  return <HomePage />;
 }
