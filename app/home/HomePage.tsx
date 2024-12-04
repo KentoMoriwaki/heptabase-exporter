@@ -53,14 +53,13 @@ export const HomePage: React.FC = () => {
         parentPath: string
       ) => {
         for await (const entry of dirHandle.values()) {
-          const entryPath = `${parentPath}/${entry.name}`;
           if (entry.kind === "file") {
             const file = await (entry as FileSystemFileHandle).getFile();
-            await dbHandler.saveFile(file, entryPath, accountId);
+            await dbHandler.saveFile(file, parentPath, accountId);
           } else if (entry.kind === "directory") {
             await traverseDirectory(
               entry as FileSystemDirectoryHandle,
-              entryPath
+              `${parentPath}/${entry.name.normalize()}`
             );
           }
         }

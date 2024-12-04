@@ -38,6 +38,7 @@ export async function getIDBHandler(
   await handler.ready();
   return handler;
 }
+
 export class IndexedDBHandler {
   private dbName: string;
   private db!: IDBDatabase;
@@ -68,8 +69,11 @@ export class IndexedDBHandler {
 
         // ファイル情報ストア
         if (!db.objectStoreNames.contains("files")) {
-          const fileStore = db.createObjectStore("files", { keyPath: "path" });
+          const fileStore = db.createObjectStore("files", {
+            keyPath: ["accountId", "path"],
+          });
           fileStore.createIndex("accountId", "accountId", { unique: false });
+          fileStore.createIndex("accountId_path", ["accountId", "path"]);
         }
       };
 
@@ -100,12 +104,12 @@ export class IndexedDBHandler {
   async getAllDataJson(accountId: string): Promise<HBData> {
     const transaction = this.db.transaction("files", "readonly");
     const store = transaction.objectStore("files");
-    const request = store.get("./All-Data.json");
+    const request = store.get([accountId, "./All-Data.json"]);
 
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
         const file: FileEntity = request.result;
-        if (!file || file.accountId !== accountId) {
+        if (!file) {
           reject(
             new Error(
               'The directory does not contain a file named "All-Data.json" for the specified account.'
@@ -122,14 +126,18 @@ export class IndexedDBHandler {
     });
   }
 
-  async saveFile(file: File, path: string, accountId: string): Promise<void> {
+  async saveFile(
+    file: File,
+    parentPath: string,
+    accountId: string
+  ): Promise<void> {
     const arrayBuffer = await file.arrayBuffer();
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("files", "readwrite");
       const store = transaction.objectStore("files");
       const entity: FileEntity = {
-        path,
-        name: file.name,
+        path: `${parentPath}/${file.name.normalize()}`,
+        name: file.name.normalize(),
         type: file.type,
         size: file.size,
         content: arrayBuffer,
@@ -150,6 +158,53 @@ export class IndexedDBHandler {
       const request = index.getAll(accountId);
 
       request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * 同名のファイルが存在する場合、`{Name} 1.md` のように連番が付与されている場合があるので、その場合は全て取得する
+   * @param accountId
+   * @param title
+   */
+  getFilesByTitle(accountId: string, title: string): Promise<FileEntity[]> {
+    return new Promise((resolve, reject) => {
+      const normalizedTitle = title.normalize().replaceAll("/", "!");
+      const transaction = this.db.transaction("files", "readonly");
+      const store = transaction.objectStore("files");
+      const index = store.index("accountId_path");
+      const pathPrefix = "./Card Library/";
+      const range = IDBKeyRange.bound(
+        [accountId, `${pathPrefix}${normalizedTitle}`],
+        [accountId, `${pathPrefix}${normalizedTitle}\uffff`]
+      );
+      // const key = [accountId, `${pathPrefix}${normalizedTitle}.md`];
+      const request = index.openCursor(range);
+
+      const files: FileEntity[] = [];
+      request.onsuccess = (event) => {
+        const cursor: IDBCursorWithValue | null = (event.target as IDBRequest)
+          .result;
+        // const cursor = request.result;
+        if (cursor) {
+          const file = cursor.value;
+          files.push(file);
+          cursor.continue();
+        } else {
+          // file の名前が `Name.md` か `Name %number.md` という形式のものに絞り込む
+          const filteredFiles = files.filter((file) => {
+            const name = file.name;
+            if (
+              name.startsWith(normalizedTitle) &&
+              name.substring(normalizedTitle.length).match(/^(\s\d+)?\.md$/)
+            ) {
+              return true;
+            }
+            return false;
+          });
+          resolve(filteredFiles);
+        }
+      };
       request.onerror = () => reject(request.error);
     });
   }

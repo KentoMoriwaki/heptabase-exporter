@@ -1,4 +1,9 @@
-import { HBWhiteboard, HBWhiteboardInstance } from "./hb-types";
+import {
+  HBCard,
+  HBCardInstance,
+  HBWhiteboard,
+  HBWhiteboardInstance,
+} from "./hb-types";
 
 export interface HBWhiteboardTree extends HBWhiteboard {
   instance: HBWhiteboardInstance;
@@ -17,8 +22,6 @@ export function buildWhiteboardTree(
     );
     if (instance) {
       instanceMap[whiteboard.id] = { ...whiteboard, instance, children: [] };
-    } else {
-      console.log(`Instance not found for whiteboard: ${whiteboard.id}`);
     }
   });
 
@@ -42,4 +45,23 @@ export function buildWhiteboardTree(
   });
 
   return roots;
+}
+
+export function filterCardsInWhiteboards(
+  whiteboardIds: Set<string>,
+  cards: HBCard[],
+  instances: HBCardInstance[]
+): HBCard[] {
+  const instanceMap: Record<string, HBCardInstance> = {};
+  instances.forEach((instance) => {
+    instanceMap[instance.cardId] = instance;
+  });
+
+  return cards.filter((card) => {
+    const instance = instanceMap[card.id];
+    if (!instance) {
+      return false;
+    }
+    return whiteboardIds.has(instance.whiteboardId);
+  });
 }

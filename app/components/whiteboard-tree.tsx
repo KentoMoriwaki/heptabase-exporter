@@ -19,7 +19,7 @@ export function WhiteboardTree({
   onCheck,
   checkedItems,
 }: WhiteboardTreeProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const isChecked = checkedItems.has(tree.id);
 
