@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { IndexedDBHandler } from "@/lib/indexed-db"; // Adjust the import path accordingly
+import { HBData } from "@/lib/exported-types";
 
 export const HomePage: React.FC = () => {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(
@@ -26,21 +27,26 @@ export const HomePage: React.FC = () => {
       setSelectedDirectory(dirHandle.name);
 
       const db = await dbHandler.init();
-      const directoryID = await dbHandler.saveDirectory(db, dirHandle.name);
 
-      let allDataJsonFound = false;
+      let allData: HBData | undefined;
+
       // Check for All-Data.json in the root directory
       for await (const entry of dirHandle.values()) {
         if (entry.kind === "file" && entry.name === "All-Data.json") {
-          allDataJsonFound = true;
+          const file = await (entry as FileSystemFileHandle).getFile();
+          const content = await file.text();
+          allData = JSON.parse(content);
+
           break;
         }
       }
-      if (!allDataJsonFound) {
+      if (!allData) {
         throw new Error(
           'The directory does not contain a file named "All-Data.json".'
         );
       }
+      const accountId = allData.ACCOUNT_ID;
+      await dbHandler.saveAccount(db, accountId);
 
       const traverseDirectory = async (
         dirHandle: FileSystemDirectoryHandle,
@@ -50,7 +56,7 @@ export const HomePage: React.FC = () => {
           const entryPath = `${parentPath}/${entry.name}`;
           if (entry.kind === "file") {
             const file = await (entry as FileSystemFileHandle).getFile();
-            await dbHandler.saveFile(db, file, entryPath, directoryID);
+            await dbHandler.saveFile(db, file, entryPath, accountId);
           } else if (entry.kind === "directory") {
             await traverseDirectory(
               entry as FileSystemDirectoryHandle,
@@ -62,7 +68,7 @@ export const HomePage: React.FC = () => {
 
       await traverseDirectory(dirHandle, ".");
 
-      navigate(`/locals/${directoryID}`);
+      navigate(`/accounts/${accountId}`);
     } catch (err) {
       console.error("Error selecting directory:", err);
     }

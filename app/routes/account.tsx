@@ -17,8 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const Locals: React.FC = () => {
-  const { directoryId } = useParams<{ directoryId: string }>();
+const Account: React.FC = () => {
+  const { accountId } = useParams<{ accountId: string }>();
   const [files, setFiles] = useState<
     Array<{ path: string; name: string; type: string; size: number }>
   >([]);
@@ -27,12 +27,12 @@ const Locals: React.FC = () => {
     const fetchFiles = async () => {
       const dbHandler = new IndexedDBHandler("HeptabaseDB");
       const db = await dbHandler.init();
-      const files = await dbHandler.getFilesByDirectoryID(db, directoryId!);
+      const files = await dbHandler.getFilesByAccountId(db, accountId!);
       setFiles(files);
     };
 
     fetchFiles();
-  }, [directoryId]);
+  }, [accountId]);
 
   const columns = React.useMemo<
     ColumnDef<{ path: string; name: string; type: string; size: number }>[]
@@ -109,4 +109,4 @@ const Locals: React.FC = () => {
   );
 };
 
-export default Locals;
+export default Account;
