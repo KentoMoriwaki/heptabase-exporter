@@ -54,7 +54,7 @@ export interface HBData {
   workspaces: HBWorkspace[];
 }
 
-interface HBMapState {
+export interface HBMapState {
   id: string;
   createdTime: string;
   lastEditedTime: string;
@@ -62,7 +62,7 @@ interface HBMapState {
   spaceId: string;
 }
 
-interface HBWhiteboard {
+export interface HBWhiteboard {
   id: string;
   name: string;
   isTrashed: boolean;
@@ -72,7 +72,7 @@ interface HBWhiteboard {
   spaceId: string;
 }
 
-interface HBCardInstance {
+export interface HBCardInstance {
   width: number;
   height: number;
   id: string;
@@ -91,7 +91,7 @@ interface HBCardInstance {
   sourceSpaceId: string;
 }
 
-interface HBCard {
+export interface HBCard {
   id: string;
   title: string;
   content: string;
@@ -101,26 +101,26 @@ interface HBCard {
   spaceId: string;
 }
 
-interface HBCardTag {
+export interface HBCardTag {
   id: string;
   name: string;
   color: string;
 }
 
-interface HBCollectionPropertyRelation {
+export interface HBCollectionPropertyRelation {
   id: string;
   collectionId: string;
   propertyId: string;
 }
 
-interface HBCollectionView {
+export interface HBCollectionView {
   id: string;
   collectionId: string;
   viewType: string;
   settings: Record<string, any>;
 }
 
-interface HBCollection {
+export interface HBCollection {
   id: string;
   name: string;
   createdTime: string;
@@ -129,14 +129,14 @@ interface HBCollection {
   spaceId: string;
 }
 
-interface HBConnection {
+export interface HBConnection {
   id: string;
   type: string;
   sourceId: string;
   targetId: string;
 }
 
-interface HBFile {
+export interface HBFile {
   id: string;
   name: string;
   type: string;
@@ -146,7 +146,7 @@ interface HBFile {
   spaceId: string;
 }
 
-interface HBHighlightElementInstance {
+export interface HBHighlightElementInstance {
   id: string;
   whiteboardId: string;
   highlightElementId: string;
@@ -161,7 +161,7 @@ interface HBHighlightElementInstance {
   spaceId: string;
 }
 
-interface HBHighlightElement {
+export interface HBHighlightElement {
   id: string;
   sourceId: string;
   note: string;
@@ -176,7 +176,7 @@ interface HBHighlightElement {
   spaceId: string;
 }
 
-interface HBInsight {
+export interface HBInsight {
   id: string;
   content: string;
   sourceId: string;
@@ -187,7 +187,7 @@ interface HBInsight {
   spaceId: string;
 }
 
-interface HBJournal {
+export interface HBJournal {
   id: string;
   name: string;
   createdTime: string;
@@ -196,12 +196,12 @@ interface HBJournal {
   spaceId: string;
 }
 
-interface HBJournalStatus {
+export interface HBJournalStatus {
   id: string;
   status: string;
 }
 
-interface HBMindMapCardNode {
+export interface HBMindMapCardNode {
   id: string;
   cardId: string;
   isFolded: boolean;
@@ -212,7 +212,7 @@ interface HBMindMapCardNode {
   spaceId: string;
 }
 
-interface HBMindMapInstance {
+export interface HBMindMapInstance {
   id: string;
   whiteboardId: string;
   mindMapId: string;
@@ -226,7 +226,7 @@ interface HBMindMapInstance {
   spaceId: string;
 }
 
-interface HBMindMapNode {
+export interface HBMindMapNode {
   id: string;
   mindMapId: string;
   parentId: string;
@@ -244,7 +244,7 @@ interface HBMindMapNode {
   spaceId: string;
 }
 
-interface HBPreferences {
+export interface HBPreferences {
   version: number;
   theme: "light" | "dark";
   navigationMode: "trackpad" | "mouse";
@@ -286,13 +286,13 @@ interface HBPreferences {
   };
 }
 
-interface HBPreferencesTabList {
+export interface HBPreferencesTabList {
   cardTabRightSidebarWidth: number;
   byId: Record<string, HBPreferencesTab>;
   all: string[]; // Array of all tab IDs
 }
 
-interface HBPreferencesTab {
+export interface HBPreferencesTab {
   tabId: string;
   zoom: number;
   offset: { x: number; y: number };
@@ -326,21 +326,21 @@ interface HBPreferencesTab {
   };
 }
 
-interface HBProperty {
+export interface HBProperty {
   id: string;
   name: string;
   type: string;
   settings: Record<string, any>;
 }
 
-interface HBSectionObjectRelation {
+export interface HBSectionObjectRelation {
   id: string;
   sectionId: string;
   objectId: string;
   objectType: string;
 }
 
-interface HBSection {
+export interface HBSection {
   id: string;
   name: string;
   createdTime: string;
@@ -349,7 +349,7 @@ interface HBSection {
   spaceId: string;
 }
 
-interface HBSource {
+export interface HBSource {
   id: string;
   type: string;
   title: string;
@@ -361,36 +361,36 @@ interface HBSource {
   spaceId: string;
 }
 
-interface HBSyncedJournalStatus {
+export interface HBSyncedJournalStatus {
   id: string;
   status: string;
 }
 
-interface HBTabGroup {
+export interface HBTabGroup {
   id: string;
   name: string;
   tabs: string[];
 }
 
-interface HBTab {
+export interface HBTab {
   id: string;
   name: string;
   groupId: string;
 }
 
-interface HBTagGroup {
+export interface HBTagGroup {
   id: string;
   name: string;
   tags: string[];
 }
 
-interface HBTag {
+export interface HBTag {
   id: string;
   name: string;
   color: string;
 }
 
-interface HBTemplate {
+export interface HBTemplate {
   id: string;
   title: string;
   content: string;
@@ -400,7 +400,7 @@ interface HBTemplate {
   createdBy: string;
 }
 
-interface HBTextElement {
+export interface HBTextElement {
   id: string;
   whiteboardId: string;
   content: string;
@@ -415,12 +415,12 @@ interface HBTextElement {
   spaceId: string;
 }
 
-interface HBTutorialStatus {
+export interface HBTutorialStatus {
   id: string;
   status: string;
 }
 
-interface HBWorkspace {
+export interface HBWorkspace {
   id: string;
   name: string;
   createdTime: string;
@@ -429,7 +429,7 @@ interface HBWorkspace {
   spaceId: string;
 }
 
-interface HBMediaElement {
+export interface HBMediaElement {
   id: string;
   whiteboardId: string;
   type: string; // "video" | "image" | other
@@ -446,7 +446,7 @@ interface HBMediaElement {
   spaceId: string;
 }
 
-interface HBMindMapTextNode {
+export interface HBMindMapTextNode {
   id: string;
   content: any;
   lastEditedTime: string;
@@ -454,7 +454,7 @@ interface HBMindMapTextNode {
   spaceId: string;
 }
 
-interface HBMindMap {
+export interface HBMindMap {
   id: string;
   createdTime: string;
   lastEditedTime: string;
@@ -462,17 +462,25 @@ interface HBMindMap {
   spaceId: string;
 }
 
-interface HBObjectPropertyRelation {
+export interface HBObjectPropertyRelation {
   id: string;
   objectId: string;
   propertyId: string;
 }
 
-interface HBWhiteboardInstance {
-  id: string;
-  whiteboardId: string;
-  createdTime: string;
-  lastEditedTime: string;
-  createdBy: string;
-  spaceId: string;
+export interface HBWhiteboardInstance {
+  id: string; // インスタンスの一意なID
+  whiteboardId: string; // このインスタンスに対応するホワイトボードのID
+  containerId: string; // 親要素のID (例: 親ホワイトボードまたはマップのID)
+  containerType: "map" | "whiteboard"; // 親要素のタイプ
+  isChild: boolean; // 子要素であるかどうか
+  color: string; // インスタンスの色設定
+  x: number; // インスタンスのX座標
+  y: number; // インスタンスのY座標
+  width: number; // インスタンスの幅
+  height: number; // インスタンスの高さ
+  createdTime: string; // 作成日時 (ISOフォーマット)
+  lastEditedTime: string; // 最終編集日時 (ISOフォーマット)
+  createdBy: string; // 作成者のID
+  spaceId: string; // 所属するスペースのID
 }

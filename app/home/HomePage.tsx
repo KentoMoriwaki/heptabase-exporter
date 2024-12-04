@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getIDBHandler, IndexedDBHandler } from "@/lib/indexed-db"; // Adjust the import path accordingly
-import { HBData } from "@/lib/exported-types";
+import { HBData } from "@/lib/hb-types";
 
 export const HomePage: React.FC = () => {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(

@@ -1,108 +1,55 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { FileEntity, getIDBHandler, IndexedDBHandler } from "@/lib/indexed-db";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import React from "react";
+import { WhiteboardTree } from "@/components/whiteboard-tree";
+import { HBData } from "@/lib/hb-types";
+import { buildWhiteboardTree } from "@/lib/hb-utils";
+import { getIDBHandler } from "@/lib/indexed-db";
+import React, { useMemo, useState } from "react";
 import { useLoaderData } from "react-router";
+import { Route } from "./+types/account";
 
-export async function clientLoader({
-  params,
-}: {
-  params: { accountId: string };
-}) {
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler();
-  const files = await dbHandler.getFilesByAccountId(params.accountId);
-  return { files };
+  const hbData = await dbHandler.getAllDataJson(params.accountId);
+  return { hbData };
 }
 
 const Account: React.FC = () => {
-  const { files } = useLoaderData<{
-    files: Array<FileEntity>;
+  const { hbData } = useLoaderData<{
+    hbData: HBData;
   }>();
 
-  const columns = React.useMemo<
-    ColumnDef<{ path: string; name: string; type: string; size: number }>[]
-  >(
-    () => [
-      {
-        header: "Name",
-        accessorKey: "name",
-      },
-      {
-        header: "Type",
-        accessorKey: "type",
-      },
-      {
-        header: "Size",
-        accessorKey: "size",
-      },
-    ],
-    []
-  );
+  const whiteboardTree = useMemo(() => {
+    const tree = buildWhiteboardTree(
+      hbData.whiteBoardList,
+      hbData.whiteboardInstances
+    );
+    return tree;
+  }, [hbData]);
 
-  const data = React.useMemo(() => files, [files]);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const handleCheck = (id: string, isChecked: boolean) => {
+    setCheckedItems((prevCheckedItems) => {
+      const newCheckedItems = new Set(prevCheckedItems);
+      if (isChecked) {
+        newCheckedItems.add(id);
+      } else {
+        newCheckedItems.delete(id);
+      }
+      return newCheckedItems;
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <Card className="w-[600px]">
-        <CardHeader>
-          <CardTitle>Files in Directory</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => {
-                return (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Heptabase Whiteboard Tree</h1>
+      {whiteboardTree.map((tree) => (
+        <WhiteboardTree
+          key={tree.id}
+          tree={tree}
+          onCheck={handleCheck}
+          checkedItems={checkedItems}
+        />
+      ))}
     </div>
   );
 };

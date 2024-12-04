@@ -1,3 +1,5 @@
+import { HBData } from "./hb-types";
+
 export type AccountEntity = {
   id: string;
 };
@@ -88,6 +90,35 @@ export class IndexedDBHandler {
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get All-Data.json from the root directory of the account
+   * @param accountId
+   */
+  async getAllDataJson(accountId: string): Promise<HBData> {
+    const transaction = this.db.transaction("files", "readonly");
+    const store = transaction.objectStore("files");
+    const request = store.get("./All-Data.json");
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const file: FileEntity = request.result;
+        if (!file || file.accountId !== accountId) {
+          reject(
+            new Error(
+              'The directory does not contain a file named "All-Data.json" for the specified account.'
+            )
+          );
+        } else {
+          const json = new TextDecoder().decode(file.content);
+          resolve(JSON.parse(json));
+        }
+      };
+      request.onerror = () => {
+        reject(request.error);
+      };
     });
   }
 
