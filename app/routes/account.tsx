@@ -1,13 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { IndexedDBHandler } from "@/lib/indexed-db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  useReactTable,
-  getCoreRowModel,
-  ColumnDef,
-  flexRender,
-} from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -16,23 +7,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FileEntity, getIDBHandler, IndexedDBHandler } from "@/lib/indexed-db";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import React from "react";
+import { useLoaderData } from "react-router";
+
+export async function clientLoader({
+  params,
+}: {
+  params: { accountId: string };
+}) {
+  const dbHandler = await getIDBHandler();
+  const files = await dbHandler.getFilesByAccountId(params.accountId);
+  return { files };
+}
 
 const Account: React.FC = () => {
-  const { accountId } = useParams<{ accountId: string }>();
-  const [files, setFiles] = useState<
-    Array<{ path: string; name: string; type: string; size: number }>
-  >([]);
-
-  useEffect(() => {
-    const fetchFiles = async () => {
-      const dbHandler = new IndexedDBHandler("HeptabaseDB");
-      const db = await dbHandler.init();
-      const files = await dbHandler.getFilesByAccountId(db, accountId!);
-      setFiles(files);
-    };
-
-    fetchFiles();
-  }, [accountId]);
+  const { files } = useLoaderData<{
+    files: Array<FileEntity>;
+  }>();
 
   const columns = React.useMemo<
     ColumnDef<{ path: string; name: string; type: string; size: number }>[]

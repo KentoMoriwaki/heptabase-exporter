@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { IndexedDBHandler } from "@/lib/indexed-db"; // Adjust the import path accordingly
+import { getIDBHandler, IndexedDBHandler } from "@/lib/indexed-db"; // Adjust the import path accordingly
 import { HBData } from "@/lib/exported-types";
 
 export const HomePage: React.FC = () => {
@@ -26,7 +26,7 @@ export const HomePage: React.FC = () => {
       const dirHandle = await window.showDirectoryPicker();
       setSelectedDirectory(dirHandle.name);
 
-      const db = await dbHandler.init();
+      const dbHandler = await getIDBHandler();
 
       let allData: HBData | undefined;
 
@@ -46,7 +46,7 @@ export const HomePage: React.FC = () => {
         );
       }
       const accountId = allData.ACCOUNT_ID;
-      await dbHandler.saveAccount(db, accountId);
+      await dbHandler.saveAccount(accountId);
 
       const traverseDirectory = async (
         dirHandle: FileSystemDirectoryHandle,
@@ -56,7 +56,7 @@ export const HomePage: React.FC = () => {
           const entryPath = `${parentPath}/${entry.name}`;
           if (entry.kind === "file") {
             const file = await (entry as FileSystemFileHandle).getFile();
-            await dbHandler.saveFile(db, file, entryPath, accountId);
+            await dbHandler.saveFile(file, entryPath, accountId);
           } else if (entry.kind === "directory") {
             await traverseDirectory(
               entry as FileSystemDirectoryHandle,
