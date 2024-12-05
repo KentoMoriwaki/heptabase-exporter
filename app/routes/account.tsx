@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { useLoaderData } from "react-router";
 import { Route } from "./+types/account";
 import { formatDate } from "@/lib/date";
+import { ExportLogModal } from "@/components/export-log-modal";
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler();
@@ -29,6 +30,9 @@ export default function Account() {
   }, [hbData]);
 
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportLogs, setExportLogs] = useState<string[]>([]);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   const handleCheck = (id: string, isChecked: boolean) => {
     setCheckedItems((prevCheckedItems) => {
@@ -43,50 +47,66 @@ export default function Account() {
   };
 
   const handleExport = async () => {
-    const selectedWhiteboards = whiteboardTree.filter((tree) =>
-      checkedItems.has(tree.id)
-    );
+    setIsExporting(true);
+    setExportLogs([]);
+    const logs: string[] = [];
+    // const selectedWhiteboards = whiteboardTree.filter((tree) =>
+    //   checkedItems.has(tree.id)
+    // );
 
-    const dbHandler = await getIDBHandler();
-    const cards = filterCardsInWhiteboards(
-      checkedItems,
-      hbData.cardList,
-      hbData.cardInstances
-    );
-    const exports: string[] = [];
-    for (const card of cards) {
-      const files = await dbHandler.getFilesByTitle(
-        hbData.ACCOUNT_ID,
-        card.title
+    try {
+      const dbHandler = await getIDBHandler();
+      const cards = filterCardsInWhiteboards(
+        checkedItems,
+        hbData.cardList,
+        hbData.cardInstances
       );
-      if (files.length === 0) {
-        console.error(`No file found for card "${card.title}"`);
-        continue;
-      }
-
-      if (files.length > 1) {
-        // TODO: card.content と比較して一致するものを選択する
-        console.warn(
-          `Multiple files found for card "${card.title}". Including all files.`,
-          files.map((f) => f.path)
+      const exports: string[] = [];
+      for (const card of cards) {
+        const files = await dbHandler.getFilesByTitle(
+          hbData.ACCOUNT_ID,
+          card.title
         );
+        if (files.length === 0) {
+          logs.push(`No file found for card "${card.title}"`);
+          continue;
+        }
+
+        if (files.length > 1) {
+          // TODO: card.content と比較して一致するものを選択する
+          logs.push(
+            `Multiple files found for card "${
+              card.title
+            }". Including all files.: ${files.map((f) => f.path).join(", ")}`
+          );
+        }
+
+        const serializedCard = serializeCard(card, files);
+        exports.push(serializedCard);
       }
 
-      const serializedCard = serializeCard(card, files);
-      exports.push(serializedCard);
+      const exportData = exports.join("");
+
+      const blob = new Blob([exportData], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "exported_whiteboards.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      logs.push("Export completed successfully.");
+    } catch (error) {
+      logs.push(
+        `Error: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setIsExporting(false);
+      setExportLogs(logs);
+      setIsLogModalOpen(true);
     }
-
-    const exportData = exports.join("");
-
-    const blob = new Blob([exportData], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "exported_whiteboards.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -99,11 +119,11 @@ export default function Account() {
           </span>
           <Button
             onClick={handleExport}
-            disabled={checkedItems.size === 0}
+            disabled={checkedItems.size === 0 || isExporting}
             className="flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Export Selected
+            {isExporting ? "Exporting..." : "Export Selected"}
           </Button>
         </div>
       </div>
@@ -115,6 +135,11 @@ export default function Account() {
           checkedItems={checkedItems}
         />
       ))}
+      <ExportLogModal
+        isOpen={isLogModalOpen}
+        onClose={() => setIsLogModalOpen(false)}
+        logs={exportLogs}
+      />
     </div>
   );
 }
