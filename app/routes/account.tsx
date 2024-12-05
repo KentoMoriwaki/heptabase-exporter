@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { WhiteboardTree } from "@/components/whiteboard-tree";
-import { HBData } from "@/lib/hb-types";
+import { HBCard, HBData } from "@/lib/hb-types";
 import { buildWhiteboardTree, filterCardsInWhiteboards } from "@/lib/hb-utils";
-import { getIDBHandler } from "@/lib/indexed-db";
+import { FileEntity, getIDBHandler } from "@/lib/indexed-db";
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLoaderData } from "react-router";
 import { Route } from "./+types/account";
+import { formatDate } from "@/lib/date";
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler();
@@ -52,38 +53,40 @@ export default function Account() {
       hbData.cardList,
       hbData.cardInstances
     );
+    const exports: string[] = [];
     for (const card of cards) {
       const files = await dbHandler.getFilesByTitle(
         hbData.ACCOUNT_ID,
         card.title
       );
       if (files.length === 0) {
-        console.error(`No file found for card ${card.title}`);
+        console.error(`No file found for card "${card.title}"`);
         continue;
       }
-      if (files.length === 1) {
-        const file = files[0];
-        // console.log(file);
-        continue;
+
+      if (files.length > 1) {
+        // TODO: card.content と比較して一致するものを選択する
+        console.warn(
+          `Multiple files found for card "${card.title}". Including all files.`,
+          files.map((f) => f.path)
+        );
       }
-      console.warn(
-        `Multiple files found for card ${card.title}`,
-        files.map((f) => f.path)
-      );
+
+      const serializedCard = serializeCard(card, files);
+      exports.push(serializedCard);
     }
 
-    console.log(cards);
-    // const exportData = JSON.stringify(selectedWhiteboards, null, 2);
+    const exportData = exports.join("");
 
-    // const blob = new Blob([exportData], { type: "application/json" });
-    // const url = URL.createObjectURL(blob);
-    // const a = document.createElement("a");
-    // a.href = url;
-    // a.download = "exported_whiteboards.json";
-    // document.body.appendChild(a);
-    // a.click();
-    // document.body.removeChild(a);
-    // URL.revokeObjectURL(url);
+    const blob = new Blob([exportData], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "exported_whiteboards.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -118,4 +121,23 @@ export default function Account() {
 
 export function HydrateFallback() {
   return <p>Loading whiteboards...</p>;
+}
+
+function serializeCard(card: HBCard, files: FileEntity[]): string {
+  const contents = files.map((file) => {
+    const comments = [
+      `Card Title: ${card.title}`,
+      `Created At: ${formatDate(card.createdTime)}`,
+      `File: ${file.path}`,
+    ];
+    const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
+    const content = new TextDecoder().decode(file.content);
+    return `${commentsStr}\n\n${content}`;
+  });
+
+  return contents
+    .map((content) => {
+      return `---\n\n${content}\n\n`;
+    })
+    .join("");
 }
