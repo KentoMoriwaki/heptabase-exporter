@@ -16,6 +16,15 @@ export type FileEntity = {
   content: ArrayBuffer;
 };
 
+export type ExportStateEntity = {
+  id: string;
+  whiteboards?: {
+    selectedIds: string[];
+  };
+};
+
+const defaultExportStateId = "default";
+
 const DBNamePrefix = "HeptabaseDB";
 const masterDBName = "HeptabaseMasterDB";
 
@@ -297,26 +306,31 @@ export class AccountDBHandler extends IndexedDBHandler {
     });
   }
 
-  async saveLastExportState(state: string[]): Promise<void> {
+  async saveLastExportState(state: Partial<ExportStateEntity>): Promise<void> {
+    const currentData = await this.getLastExportState();
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("exportState", "readwrite");
       const store = transaction.objectStore("exportState");
-      const request = store.put({ id: "lastExportState", state });
+      const entity: ExportStateEntity = {
+        ...currentData,
+        ...state,
+      };
+      const request = store.put(entity);
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
 
-  async getLastExportState(): Promise<string[]> {
-    return new Promise((resolve, reject) => {
+  async getLastExportState() {
+    return new Promise<ExportStateEntity>((resolve, reject) => {
       const transaction = this.db.transaction("exportState", "readonly");
       const store = transaction.objectStore("exportState");
-      const request = store.get("lastExportState");
+      const request = store.get(defaultExportStateId);
 
       request.onsuccess = () => {
-        const result = request.result;
-        resolve(result ? result.state : []);
+        const result: ExportStateEntity | undefined = request.result;
+        resolve(result ? result : { id: defaultExportStateId });
       };
       request.onerror = () => reject(request.error);
     });

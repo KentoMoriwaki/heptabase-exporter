@@ -46,7 +46,7 @@ export default function Account({
   }, [hbData]);
 
   const [checkedItems, setCheckedItems] = useState<Set<string>>(
-    () => new Set(lastExportState)
+    () => new Set(lastExportState.whiteboards?.selectedIds)
   );
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -113,7 +113,11 @@ export default function Account({
       URL.revokeObjectURL(url);
 
       logs.push("Export completed successfully.");
-      await dbHandler.saveLastExportState(Array.from(checkedItems));
+      await dbHandler.saveLastExportState({
+        whiteboards: {
+          selectedIds: Array.from(checkedItems),
+        },
+      });
     } catch (error) {
       logs.push(
         `Error: ${error instanceof Error ? error.message : String(error)}`
