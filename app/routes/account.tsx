@@ -11,7 +11,7 @@ import {
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
 import { Download, Upload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Route } from "./+types/account";
 import { useNavigate } from "react-router";
@@ -133,14 +133,22 @@ export default function Account({
           `The uploaded data is for account ID ${allData.ACCOUNT_ID}, not ${accountId}.`
         );
       }
-      const accountDb = await getIDBHandler(accountId);
-      await accountDb.deleteFiles();
 
+      const mainData = await getIDBMasterHandler();
       const allDataPath = allDataFile.path || allDataFile.webkitRelativePath;
       const rootDirPath = allDataPath.slice(
         0,
         allDataPath.length - "All-Data.json".length
       );
+      const folderName = rootDirPath.replace(/^[/.]+|[/.]+$/g, "");
+      await mainData.updateAccount({
+        id: accountId,
+        folderName,
+        lastUploaded: Date.now(),
+      });
+
+      const accountDb = await getIDBHandler(accountId);
+      await accountDb.deleteFiles();
 
       for (const file of acceptedFiles) {
         const path = file.path || file.webkitRelativePath;
@@ -159,6 +167,24 @@ export default function Account({
     }
     setIsUploading(false);
   };
+
+  useEffect(() => {
+    let mounted = true;
+    const update = async () => {
+      const mainDb = await getIDBMasterHandler();
+      if (!mounted) return;
+      await mainDb.updateAccount({
+        id: accountId,
+        lastOpened: Date.now(),
+      });
+    };
+    update().catch((e) => {
+      console.error(e);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [accountId]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     useFsAccessApi: false,

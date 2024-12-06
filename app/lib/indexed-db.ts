@@ -2,6 +2,10 @@ import { HBData } from "./hb-types";
 
 export type AccountEntity = {
   id: string;
+  name: string;
+  folderName: string;
+  lastOpened: number;
+  lastUploaded: number;
 };
 
 export type FileEntity = {
@@ -99,13 +103,50 @@ export class MasterDBHandler extends IndexedDBHandler {
     });
   }
 
-  async saveAccount(accountId: string): Promise<void> {
+  async saveAccount(accountId: string, folderName: string): Promise<void> {
+    const currentAccounts = await this.getAccounts();
+    const existingAccount = currentAccounts.find((a) => a.id === accountId);
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("accounts", "readwrite");
       const store = transaction.objectStore("accounts");
-      const request = store.put({ id: accountId });
+      const account: AccountEntity = {
+        id: accountId,
+        name: existingAccount
+          ? existingAccount.name
+          : currentAccounts.length === 0
+          ? "Default Account"
+          : `Account ${currentAccounts.length + 1}`,
+        folderName,
+        lastOpened: Date.now(),
+        lastUploaded: Date.now(),
+      };
+      const request = store.put(account);
 
       request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateAccount(
+    account: Partial<AccountEntity> & { id: string }
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("accounts", "readwrite");
+      const store = transaction.objectStore("accounts");
+      const request = store.get(account.id);
+
+      request.onsuccess = () => {
+        const existingAccount = request.result;
+        if (!existingAccount) {
+          reject(new Error(`Account ${account.id} not found`));
+          return;
+        }
+        const updatedAccount = { ...existingAccount, ...account };
+        const updateRequest = store.put(updatedAccount);
+
+        updateRequest.onsuccess = () => resolve();
+        updateRequest.onerror = () => reject(updateRequest.error);
+      };
       request.onerror = () => reject(request.error);
     });
   }

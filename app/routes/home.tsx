@@ -44,16 +44,18 @@ export default function HomePage({
       }
       const allData: HBData = JSON.parse(await allDataFile.text());
       const accountId = allData.ACCOUNT_ID;
-      await masterDB.saveAccount(accountId);
-
-      const accountDb = await getIDBHandler(accountId);
-      await accountDb.deleteFiles();
 
       const allDataPath = allDataFile.path || allDataFile.webkitRelativePath;
       const rootDirPath = allDataPath.slice(
         0,
         allDataPath.length - "All-Data.json".length
       );
+      // Remove slashes and dots at the beginning and the end from the folder name
+      const folderName = rootDirPath.replace(/^[/.]+|[/.]+$/g, "");
+
+      await masterDB.saveAccount(accountId, folderName);
+      const accountDb = await getIDBHandler(accountId);
+      await accountDb.deleteFiles();
 
       for (const file of acceptedFiles) {
         const path = file.path || file.webkitRelativePath;
