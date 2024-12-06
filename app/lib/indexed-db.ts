@@ -22,19 +22,20 @@ const masterDBName = "HeptabaseMasterDB";
 const handlerCache = new Map();
 
 export async function getIDBMasterHandler(): Promise<MasterDBHandler> {
-  return _getIDBHandler(masterDBName, MasterDBHandler);
+  return _getIDBHandler(masterDBName, 1, MasterDBHandler);
 }
 
 export async function getIDBHandler(
   accountId: string
 ): Promise<AccountDBHandler> {
   const dbName = `${DBNamePrefix}_${accountId}`;
-  return _getIDBHandler(dbName, AccountDBHandler);
+  return _getIDBHandler(dbName, 1, AccountDBHandler);
 }
 
 async function _getIDBHandler<T extends IndexedDBHandler>(
   dbName: string,
-  HandlerClass: new (dbName: string) => T
+  version: number,
+  HandlerClass: new (dbName: string, version: number) => T
 ): Promise<T> {
   const cachedRef = handlerCache.get(dbName);
   if (cachedRef) {
@@ -47,7 +48,7 @@ async function _getIDBHandler<T extends IndexedDBHandler>(
     }
   }
 
-  const handler = new HandlerClass(dbName);
+  const handler = new HandlerClass(dbName, version);
   handlerCache.set(dbName, new WeakRef(handler));
   await handler.ready();
   return handler;
@@ -55,11 +56,13 @@ async function _getIDBHandler<T extends IndexedDBHandler>(
 
 abstract class IndexedDBHandler {
   protected dbName: string;
+  protected version: number;
   protected db!: IDBDatabase;
   protected initPromise: Promise<void> | null = null;
 
-  constructor(dbName: string) {
+  constructor(dbName: string, version: number) {
     this.dbName = dbName;
+    this.version = version;
   }
 
   ready(): Promise<void> {
@@ -75,7 +78,7 @@ abstract class IndexedDBHandler {
 export class MasterDBHandler extends IndexedDBHandler {
   protected async init(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName);
+      const request = indexedDB.open(this.dbName, this.version);
 
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -166,7 +169,7 @@ export class MasterDBHandler extends IndexedDBHandler {
 export class AccountDBHandler extends IndexedDBHandler {
   protected async init(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName);
+      const request = indexedDB.open(this.dbName, this.version);
 
       request.onupgradeneeded = () => {
         const db = request.result;
