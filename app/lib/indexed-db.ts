@@ -176,6 +176,9 @@ export class AccountDBHandler extends IndexedDBHandler {
           });
           fileStore.createIndex("path", "path");
         }
+        if (!db.objectStoreNames.contains("exportState")) {
+          db.createObjectStore("exportState", { keyPath: "id" });
+        }
       };
 
       request.onsuccess = () => {
@@ -217,7 +220,7 @@ export class AccountDBHandler extends IndexedDBHandler {
       const transaction = this.db.transaction("files", "readwrite");
       const store = transaction.objectStore("files");
       const entity: FileEntity = {
-        path,
+        path: path.normalize(),
         name: file.name.normalize(),
         type: file.type,
         size: file.size,
@@ -287,6 +290,31 @@ export class AccountDBHandler extends IndexedDBHandler {
       const request = store.clear();
 
       request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveLastExportState(state: string[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("exportState", "readwrite");
+      const store = transaction.objectStore("exportState");
+      const request = store.put({ id: "lastExportState", state });
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getLastExportState(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("exportState", "readonly");
+      const store = transaction.objectStore("exportState");
+      const request = store.get("lastExportState");
+
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.state : []);
+      };
       request.onerror = () => reject(request.error);
     });
   }

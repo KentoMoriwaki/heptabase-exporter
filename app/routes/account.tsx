@@ -29,11 +29,12 @@ export function meta({}: Route.MetaArgs) {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler(params.accountId);
   const hbData = await dbHandler.getAllDataJson();
-  return { hbData };
+  const lastExportState = await dbHandler.getLastExportState();
+  return { hbData, lastExportState };
 }
 
 export default function Account({
-  loaderData: { hbData },
+  loaderData: { hbData, lastExportState },
   params: { accountId },
 }: Route.ComponentProps) {
   const whiteboardTree = useMemo(() => {
@@ -44,7 +45,9 @@ export default function Account({
     return tree;
   }, [hbData]);
 
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(
+    () => new Set(lastExportState)
+  );
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [exportLogs, setExportLogs] = useState<string[]>([]);
@@ -110,6 +113,7 @@ export default function Account({
       URL.revokeObjectURL(url);
 
       logs.push("Export completed successfully.");
+      await dbHandler.saveLastExportState(Array.from(checkedItems));
     } catch (error) {
       logs.push(
         `Error: ${error instanceof Error ? error.message : String(error)}`
