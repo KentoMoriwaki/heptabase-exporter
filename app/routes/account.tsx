@@ -233,10 +233,6 @@ export default function Account({
   );
 }
 
-export function HydrateFallback() {
-  return <p>Loading whiteboards...</p>;
-}
-
 function serializeCard(card: HBCard, files: FileEntity[]): string {
   const contents = files.map((file) => {
     const comments = [
