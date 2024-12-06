@@ -16,6 +16,16 @@ import { useDropzone } from "react-dropzone";
 import { Route } from "./+types/account";
 import { useNavigate } from "react-router";
 
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Bundle My Heptabase" },
+    {
+      name: "description",
+      content: "Safely organize exported data for AI tools.",
+    },
+  ];
+}
+
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler(params.accountId);
   const hbData = await dbHandler.getAllDataJson();

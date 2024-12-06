@@ -10,8 +10,11 @@ import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Bundle My Heptabase" },
+    {
+      name: "description",
+      content: "Safely organize exported data for AI tools.",
+    },
   ];
 }
 
