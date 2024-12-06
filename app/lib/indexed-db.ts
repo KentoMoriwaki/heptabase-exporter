@@ -38,9 +38,9 @@ async function _getIDBHandler<T extends IndexedDBHandler>(
 ): Promise<T> {
   const cachedRef = handlerCache.get(dbName);
   if (cachedRef) {
-    const cachedHandler = cachedRef.deref();
+    const cachedHandler: T | undefined = cachedRef.deref();
     if (cachedHandler) {
-      cachedHandler.ready();
+      await cachedHandler.ready();
       return cachedHandler;
     } else {
       handlerCache.delete(dbName);
