@@ -75,16 +75,18 @@ export default function HomePage() {
     >
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-center">Heptabase Exporter</h1>
+          <h1 className="text-2xl font-bold text-center">
+            Bundle My Heptabase
+          </h1>
         </div>
       </header>
 
       <main className="flex-grow flex flex-col justify-center items-center p-4">
         <section className="text-center mb-8 max-w-2xl">
           <h2 className="text-3xl font-bold mb-4">
-            Utilize Heptabase Data
+            Bundle Your Heptabase Data
             <br />
-            with AI Tools
+            for AI Tools
           </h2>
           <p className="text-xl mb-6">
             Safely organize exported data and
@@ -183,7 +185,7 @@ export default function HomePage() {
 
       <footer className="border-t py-4">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2023 Heptabase Exporter</p>
+          <p>&copy; 2024 Bundle My Heptabase</p>
         </div>
       </footer>
     </div>
