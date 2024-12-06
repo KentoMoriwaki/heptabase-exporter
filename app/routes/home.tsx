@@ -86,10 +86,13 @@ export default function HomePage() {
             <br />
             with AI Tools
           </h2>
-          <p className="text-xl mb-8">
+          <p className="text-xl mb-6">
             Safely organize exported data and
             <br />
             easily use it with ChatGPT, Claude, NotebookLM, and more.
+          </p>
+          <p className="text-lg font-semibold text-primary">
+            100% Free to Use - No Sign-up Required!
           </p>
         </section>
 
@@ -112,7 +115,7 @@ export default function HomePage() {
             })}
           />
           <Button size="lg" onClick={onClickDropzone}>
-            Select Directory
+            Start Exporting for Free
           </Button>
           <p className="mt-4 text-sm text-muted-foreground">
             Note: If you have a ZIP file, please extract it before selecting the
@@ -124,7 +127,8 @@ export default function HomePage() {
           Data processing is done entirely in your browser and is never sent to
           any server.
           <br />
-          Your data remains safe at all times.
+          Your data remains safe at all times. This service is completely free,
+          with no hidden costs.
         </p>
 
         <section className="w-full max-w-4xl">
