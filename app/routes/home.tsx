@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Brain, Shield, Upload } from "lucide-react";
+import { FileText, Zap, Brain, Shield, Upload, History } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { getIDBHandler, getIDBMasterHandler } from "@/lib/indexed-db";
 import { HBData } from "@/lib/hb-types";
 import { cn } from "@/lib/utils";
@@ -16,7 +15,15 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function HomePage() {
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+  const masterDB = await getIDBMasterHandler();
+  const accounts = await masterDB.getAccounts();
+  return { accounts };
+}
+
+export default function HomePage({
+  loaderData: { accounts },
+}: Route.ComponentProps) {
   const navigate = useNavigate();
 
   const onDrop = async (acceptedFiles: Array<File & { path?: string }>) => {
@@ -80,6 +87,30 @@ export default function HomePage() {
           </h1>
         </div>
       </header>
+
+      {accounts.length > 0 && (
+        <div className="w-full flex justify-center">
+          <Card className="w-full max-w-xl mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <History className="w-5 h-5 mr-2" />
+                Resume from Previous Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                You have previously uploaded data. Would you like to continue
+                where you left off?
+              </p>
+              <Button asChild>
+                <Link to={`/accounts/${accounts[0].id}`}>
+                  Resume Previous Session
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <main className="flex-grow flex flex-col justify-center items-center p-4">
         <section className="text-center mb-8 max-w-2xl">

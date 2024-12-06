@@ -88,6 +88,17 @@ export class MasterDBHandler extends IndexedDBHandler {
     });
   }
 
+  async getAccounts(): Promise<AccountEntity[]> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("accounts", "readonly");
+      const store = transaction.objectStore("accounts");
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async saveAccount(accountId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("accounts", "readwrite");
