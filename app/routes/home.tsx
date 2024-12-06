@@ -90,7 +90,7 @@ export default function HomePage({
 
       {accounts.length > 0 && (
         <div className="w-full flex justify-center">
-          <Card className="w-full max-w-xl mt-8">
+          <Card className="w-full max-w-xl mt-8 mb-4 mx-4">
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
                 <History className="w-5 h-5 mr-2" />
