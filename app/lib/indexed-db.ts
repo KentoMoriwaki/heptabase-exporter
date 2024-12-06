@@ -137,7 +137,7 @@ export class AccountDBHandler extends IndexedDBHandler {
   async getAllDataJson(): Promise<HBData> {
     const transaction = this.db.transaction("files", "readonly");
     const store = transaction.objectStore("files");
-    const request = store.get("/All-Data.json");
+    const request = store.get("All-Data.json");
 
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
@@ -195,7 +195,7 @@ export class AccountDBHandler extends IndexedDBHandler {
       const transaction = this.db.transaction("files", "readonly");
       const store = transaction.objectStore("files");
       const index = store.index("path");
-      const pathPrefix = "/Card Library/";
+      const pathPrefix = "Card Library/";
       const range = IDBKeyRange.bound(
         `${pathPrefix}${normalizedTitle}`,
         `${pathPrefix}${normalizedTitle}\uffff`

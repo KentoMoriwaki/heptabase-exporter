@@ -111,61 +111,53 @@ export default function Account({
     }
   };
 
-  const onDrop = (acceptedFiles: File[]) => {
+  const onDrop = async (acceptedFiles: Array<File & { path?: string }>) => {
     setIsUploading(true);
-    const file = acceptedFiles[0];
-    const reader = new FileReader();
 
-    reader.onabort = () => console.log("file reading was aborted");
-    reader.onerror = () => console.log("file reading has failed");
-    reader.onload = async () => {
-      try {
-        let allDataFile: File | undefined;
-        for (const file of acceptedFiles) {
-          if (file.name === "All-Data.json") {
-            allDataFile = file;
-            break;
-          }
+    try {
+      let allDataFile: (typeof acceptedFiles)[0] | undefined;
+      for (const file of acceptedFiles) {
+        if (file.name === "All-Data.json") {
+          allDataFile = file;
+          break;
         }
-        if (!allDataFile) {
-          throw new Error(
-            'The directory does not contain a file named "All-Data.json".'
-          );
-        }
-        const allData: HBData = JSON.parse(await allDataFile.text());
-        if (allData.ACCOUNT_ID !== accountId) {
-          throw new Error(
-            `The uploaded data is for account ID ${allData.ACCOUNT_ID}, not ${accountId}.`
-          );
-        }
-        const accountDb = await getIDBHandler(accountId);
-        await accountDb.deleteFiles();
-        const rootDirPath = allDataFile.webkitRelativePath
-          .split("/")
-          .slice(0, allDataFile.webkitRelativePath.startsWith("/") ? 2 : 1)
-          .join("/");
-
-        for (const file of acceptedFiles) {
-          await accountDb.saveFile(
-            file,
-            file.webkitRelativePath.substring(rootDirPath.length)
-          );
-        }
-        setExportLogs([
-          "File uploaded and data updated successfully. Will reload the page.",
-        ]);
-        setIsLogModalOpen(true);
-        setTimeout(() => {
-          navigate(0);
-        }, 1000);
-      } catch (error) {
-        setExportLogs(["Error: Invalid JSON file."]);
-        setIsLogModalOpen(true);
       }
-      setIsUploading(false);
-    };
+      if (!allDataFile) {
+        throw new Error(
+          'The directory does not contain a file named "All-Data.json".'
+        );
+      }
+      const allData: HBData = JSON.parse(await allDataFile.text());
+      if (allData.ACCOUNT_ID !== accountId) {
+        throw new Error(
+          `The uploaded data is for account ID ${allData.ACCOUNT_ID}, not ${accountId}.`
+        );
+      }
+      const accountDb = await getIDBHandler(accountId);
+      await accountDb.deleteFiles();
 
-    reader.readAsText(file);
+      const allDataPath = allDataFile.path || allDataFile.webkitRelativePath;
+      const rootDirPath = allDataPath.slice(
+        0,
+        allDataPath.length - "All-Data.json".length
+      );
+
+      for (const file of acceptedFiles) {
+        const path = file.path || file.webkitRelativePath;
+        await accountDb.saveFile(file, path.substring(rootDirPath.length));
+      }
+      setExportLogs([
+        "File uploaded and data updated successfully. Will reload the page.",
+      ]);
+      setIsLogModalOpen(true);
+      setTimeout(() => {
+        navigate(0);
+      }, 1000);
+    } catch (error) {
+      setExportLogs(["Error: Invalid JSON file."]);
+      setIsLogModalOpen(true);
+    }
+    setIsUploading(false);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -215,6 +207,10 @@ export default function Account({
             </Button>
           </div>
         </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Note: The uploaded data is stored locally in your browser and is not
+          sent to the server.
+        </p>
         {whiteboardTree.map((tree) => (
           <WhiteboardTree
             key={tree.id}
