@@ -21,7 +21,34 @@ export type ExportStateEntity = {
   whiteboards?: {
     selectedIds: string[];
   };
+  journals?: {
+    enabled?: boolean;
+    config: JournalExportState;
+  };
 };
+
+export type JournalExportState =
+  | {
+      type: "this-week";
+    }
+  | {
+      type: "this-month";
+    }
+  | {
+      type: "last-month";
+    }
+  | {
+      type: "this-year";
+    }
+  | {
+      type: "custom";
+      startDate: Date | null;
+      endDate: Date | null;
+    }
+  | {
+      type: "last-n-days";
+      days: number;
+    };
 
 const defaultExportStateId = "default";
 

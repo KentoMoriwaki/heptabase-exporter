@@ -15,53 +15,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { JournalExportState } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+
+type JournalExportType = JournalExportState["type"];
+
+const exportLabels: {
+  [key in JournalExportType]: string;
+} = {
+  "this-week": "This Week",
+  "this-month": "This Month",
+  "last-month": "Last Month",
+  "this-year": "This Year",
+  custom: "Custom Range",
+  "last-n-days": "Last N Days",
+};
 
 interface JournalExportProps {
   isExportEnabled: boolean;
+  value: JournalExportState;
   onExportEnabledChange: (enabled: boolean) => void;
+  onValueChange: (value: JournalExportState) => void;
 }
-
-const presetPeriods = [
-  {
-    label: "This Week",
-    value: `${new Date(
-      new Date().setDate(new Date().getDate() - new Date().getDay())
-    )}-${new Date()}`,
-  },
-  {
-    label: "This Month",
-    value: `${new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    )}-${new Date()}`,
-  },
-  {
-    label: "Last Month",
-    value: `${new Date(
-      new Date().getFullYear(),
-      new Date().getMonth() - 1,
-      1
-    )}-${new Date(new Date().getFullYear(), new Date().getMonth(), 0)}`,
-  },
-  {
-    label: "This Year",
-    value: `${new Date(new Date().getFullYear(), 0, 1)}-${new Date()}`,
-  },
-];
 
 export function JournalExport({
   isExportEnabled,
+  value,
   onExportEnabledChange,
+  onValueChange,
 }: JournalExportProps) {
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
-  const [customDays, setCustomDays] = useState<string>("");
+  const onSelectChange = (value: string) => {
+    switch (value) {
+      case "custom":
+        onValueChange({ type: "custom", startDate: null, endDate: null });
+        break;
+      case "last-n-days":
+        onValueChange({ type: "last-n-days", days: 7 });
+        break;
+      case "this-week":
+      case "this-month":
+      case "last-month":
+      case "this-year":
+        onValueChange({ type: value });
+        break;
+      default:
+        throw new Error(`Unsupported value: ${value}`);
+    }
+  };
 
   return (
     <div className="mt-8 p-4 border rounded-lg">
@@ -80,52 +82,65 @@ export function JournalExport({
         <div className="space-y-4">
           <div>
             <Label htmlFor="period-select">Select Period</Label>
-            <Select onValueChange={setSelectedPreset} value={selectedPreset}>
+            <Select
+              onValueChange={(value) => onSelectChange(value)}
+              value={value.type}
+            >
               <SelectTrigger id="period-select">
                 <SelectValue placeholder="Select a period" />
               </SelectTrigger>
               <SelectContent>
-                {presetPeriods.map((period) => (
-                  <SelectItem key={period.value} value={period.value}>
-                    {period.label}
+                {Object.entries(exportLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
                   </SelectItem>
                 ))}
-                <SelectItem value="custom">Custom Range</SelectItem>
-                <SelectItem value="lastNDays">Last N Days</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {selectedPreset === "custom" && (
+          {value.type === "custom" && (
             <div className="flex space-x-4">
               <div>
                 <Label htmlFor="start-date">Start Date</Label>
                 <DatePicker
                   id="start-date"
-                  selected={startDate}
-                  onSelect={setStartDate}
+                  selected={value.startDate ?? undefined}
+                  onSelect={(date) => {
+                    onValueChange({
+                      ...value,
+                      startDate: date ?? null,
+                    });
+                  }}
                 />
               </div>
               <div>
                 <Label htmlFor="end-date">End Date</Label>
                 <DatePicker
                   id="end-date"
-                  selected={endDate}
-                  onSelect={setEndDate}
+                  selected={value.endDate ?? undefined}
+                  onSelect={(date) => {
+                    onValueChange({
+                      ...value,
+                      endDate: date ?? null,
+                    });
+                  }}
                 />
               </div>
             </div>
           )}
 
-          {selectedPreset === "lastNDays" && (
+          {value.type === "last-n-days" && (
             <div>
               <Label htmlFor="custom-days">Number of Days</Label>
               <Input
                 id="custom-days"
                 type="number"
-                value={customDays}
-                onChange={(e) => setCustomDays(e.target.value)}
                 placeholder="Enter number of days"
+                value={value.days}
+                onChange={(e) => {
+                  onValueChange({ ...value, days: parseInt(e.target.value) });
+                }}
               />
             </div>
           )}
@@ -141,7 +156,7 @@ export function DatePicker({
   onSelect,
 }: {
   id?: string;
-  selected?: Date;
+  selected: Date | undefined;
   onSelect: (date: Date | undefined) => void;
 }) {
   return (

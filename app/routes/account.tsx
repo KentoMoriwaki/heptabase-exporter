@@ -1,5 +1,13 @@
 import { ExportLogModal } from "@/components/export-log-modal";
+import { JournalExport } from "@/components/journal-export";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/tabs";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { WhiteboardTree } from "@/components/whiteboard-tree";
 import { formatDate } from "@/lib/date";
 import { HBCard, HBData } from "@/lib/hb-types";
@@ -8,21 +16,14 @@ import {
   FileEntity,
   getIDBHandler,
   getIDBMasterHandler,
+  JournalExportState,
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
 import { Copy, Download, FileDown, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Route } from "./+types/account";
 import { useNavigate } from "react-router";
-import { Tabs, TabsContent, TabsTrigger } from "@/components/tabs";
-import { JournalExport } from "@/components/journal-export";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Route } from "./+types/account";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -57,11 +58,13 @@ export default function Account({
     () => new Set(lastExportState.whiteboards?.selectedIds)
   );
 
-  const [selectedJournals, setSelectedJournals] = useState<{
-    startDate: Date | null;
-    endDate: Date | null;
-    isExportEnabled: boolean;
-  }>({ startDate: null, endDate: null, isExportEnabled: false });
+  const [journalExport, setJournalExport] = useState<{
+    enabled?: boolean;
+    config: JournalExportState;
+  }>({
+    enabled: lastExportState.journals?.enabled,
+    config: lastExportState.journals?.config ?? { type: "this-week" },
+  });
 
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -139,6 +142,7 @@ export default function Account({
         whiteboards: {
           selectedIds: Array.from(checkedItems),
         },
+        journals: journalExport,
       });
     } catch (error) {
       logs.push(
@@ -226,8 +230,7 @@ export default function Account({
     };
   }, [accountId]);
 
-  const isExportDisabled =
-    checkedItems.size === 0 && !selectedJournals.isExportEnabled;
+  const isExportDisabled = checkedItems.size === 0 && !journalExport?.enabled;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     useFsAccessApi: false,
@@ -306,7 +309,7 @@ export default function Account({
           </TabsTrigger>
           <TabsTrigger
             value="journals"
-            // selectedCount={selectedJournals.isExportEnabled ? 1 : 0}
+            selectedCount={journalExport?.enabled ? 1 : 0}
           >
             Journals
           </TabsTrigger>
@@ -328,12 +331,13 @@ export default function Account({
 
           <TabsContent value="journals">
             <JournalExport
-              isExportEnabled={selectedJournals.isExportEnabled}
+              isExportEnabled={journalExport?.enabled ?? false}
               onExportEnabledChange={(enabled) => {
-                setSelectedJournals((prev) => ({
-                  ...prev,
-                  isExportEnabled: enabled,
-                }));
+                setJournalExport((prev) => ({ ...prev, enabled }));
+              }}
+              value={journalExport.config}
+              onValueChange={(config) => {
+                setJournalExport((prev) => ({ ...prev, config }));
               }}
             />
           </TabsContent>
