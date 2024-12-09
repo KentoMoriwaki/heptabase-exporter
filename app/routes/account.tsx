@@ -10,11 +10,19 @@ import {
   getIDBMasterHandler,
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
-import { Download, Upload } from "lucide-react";
+import { Copy, Download, FileDown, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Route } from "./+types/account";
 import { useNavigate } from "react-router";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/tabs";
+import { JournalExport } from "@/components/journal-export";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -48,12 +56,21 @@ export default function Account({
   const [checkedItems, setCheckedItems] = useState<Set<string>>(
     () => new Set(lastExportState.whiteboards?.selectedIds)
   );
+
+  const [selectedJournals, setSelectedJournals] = useState<{
+    startDate: Date | null;
+    endDate: Date | null;
+    isExportEnabled: boolean;
+  }>({ startDate: null, endDate: null, isExportEnabled: false });
+
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [exportLogs, setExportLogs] = useState<string[]>([]);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState("whiteboards");
 
   const handleCheck = (id: string, isChecked: boolean) => {
     setCheckedItems((prevCheckedItems) => {
@@ -67,7 +84,7 @@ export default function Account({
     });
   };
 
-  const handleExport = async () => {
+  const handleExport = async (action: "file" | "clipboard") => {
     setIsExporting(true);
     setExportLogs([]);
     const logs: string[] = [];
@@ -102,17 +119,22 @@ export default function Account({
 
       const exportData = exports.join("");
 
-      const blob = new Blob([exportData], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "exported_whiteboards.txt";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (action === "clipboard") {
+        navigator.clipboard.writeText(exportData);
+        logs.push("Export completed successfully. Copied to clipboard.");
+      } else {
+        const blob = new Blob([exportData], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "exported_whiteboards.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-      logs.push("Export completed successfully.");
+        logs.push("Export completed successfully.");
+      }
       await dbHandler.saveLastExportState({
         whiteboards: {
           selectedIds: Array.from(checkedItems),
@@ -204,6 +226,9 @@ export default function Account({
     };
   }, [accountId]);
 
+  const isExportDisabled =
+    checkedItems.size === 0 && !selectedJournals.isExportEnabled;
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     useFsAccessApi: false,
     onDrop,
@@ -248,28 +273,72 @@ export default function Account({
                 {isUploading ? "Uploading..." : "Upload New Data"}
               </Button>
             </div>
-            <Button
-              onClick={handleExport}
-              disabled={checkedItems.size === 0 || isExporting}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              {isExporting ? "Exporting..." : "Export Selected"}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  disabled={isExportDisabled || isExporting}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {isExporting ? "Exporting..." : "Export Selected"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExport("file")}>
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Export as File
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("clipboard")}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy to Clipboard
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <p className="text-sm text-gray-500 mb-4">
           Note: The uploaded data is stored locally in your browser and is not
           sent to the server.
         </p>
-        {whiteboardTree.map((tree) => (
-          <WhiteboardTree
-            key={tree.id}
-            tree={tree}
-            onCheck={handleCheck}
-            checkedItems={checkedItems}
-          />
-        ))}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+          <TabsTrigger value="whiteboards" selectedCount={checkedItems.size}>
+            Whiteboards
+          </TabsTrigger>
+          <TabsTrigger
+            value="journals"
+            // selectedCount={selectedJournals.isExportEnabled ? 1 : 0}
+          >
+            Journals
+          </TabsTrigger>
+          <TabsContent value="whiteboards">
+            <div className="mb-4">
+              <span className="text-sm text-gray-500">
+                {checkedItems.size} item(s) selected
+              </span>
+            </div>
+            {whiteboardTree.map((tree) => (
+              <WhiteboardTree
+                key={tree.id}
+                tree={tree}
+                onCheck={handleCheck}
+                checkedItems={checkedItems}
+              />
+            ))}
+          </TabsContent>
+
+          <TabsContent value="journals">
+            <JournalExport
+              isExportEnabled={selectedJournals.isExportEnabled}
+              onExportEnabledChange={(enabled) => {
+                setSelectedJournals((prev) => ({
+                  ...prev,
+                  isExportEnabled: enabled,
+                }));
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+
         <ExportLogModal
           isOpen={isLogModalOpen}
           onClose={() => setIsLogModalOpen(false)}
