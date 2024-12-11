@@ -175,7 +175,7 @@ export function WhiteboardTree({
             {exportState.selectType === "include" ||
             exportState.selectType === "exclude" ? (
               <Popover>
-                <PopoverTrigger>
+                <PopoverTrigger asChild>
                   <Button variant="secondary">
                     {exportState.selectedIds.length > 0
                       ? `Sections (${exportState.selectedIds.length})`

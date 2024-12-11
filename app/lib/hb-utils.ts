@@ -76,20 +76,50 @@ export function buildWhiteboardTree({
 
 export function filterCardsInWhiteboards(
   whiteboardIds: Set<string>,
-  cards: HBCard[],
-  instances: HBCardInstance[]
+  {
+    cardList,
+    cardInstances,
+    sectionObjectRelations,
+  }: Pick<HBData, "cardList" | "cardInstances" | "sectionObjectRelations">,
+  options: {
+    includeSections?: string[];
+    excludeSections?: string[];
+  }
 ): HBCard[] {
   const instanceMap: Record<string, HBCardInstance> = {};
-  instances.forEach((instance) => {
+  cardInstances.forEach((instance) => {
     instanceMap[instance.cardId] = instance;
   });
+  const cardSections: Record<string, string> = {}; // cardId -> sectionId
+  sectionObjectRelations.forEach((relation) => {
+    if (relation.objectType === "cardInstance") {
+      const cardId = relation.objectId;
+      const sectionId = relation.sectionId;
+      cardSections[cardId] = sectionId;
+    }
+  });
 
-  return cards.filter((card) => {
+  return cardList.filter((card) => {
     const instance = instanceMap[card.id];
     if (!instance) {
       return false;
     }
-    return whiteboardIds.has(instance.whiteboardId);
+    if (!whiteboardIds.has(instance.whiteboardId)) {
+      return false;
+    }
+    if (options.includeSections) {
+      return (
+        cardSections[instance.id] &&
+        options.includeSections.includes(cardSections[instance.id])
+      );
+    }
+    if (options.excludeSections) {
+      return (
+        cardSections[instance.id] &&
+        !options.excludeSections.includes(cardSections[instance.id])
+      );
+    }
+    return true;
   });
 }
 // 指定したセクションに所属するカードを取得する関数

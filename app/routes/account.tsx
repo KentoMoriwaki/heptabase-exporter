@@ -105,32 +105,42 @@ export default function Account({
 
     try {
       const dbHandler = await getIDBHandler(accountId);
-      const cards = filterCardsInWhiteboards(
-        new Set(
-          whiteboardExports.filter((e) => e.enabled).map((e) => e.whiteboardId)
-        ),
-        hbData.cardList,
-        hbData.cardInstances
-      );
       const exports: string[] = [];
-      for (const card of cards) {
-        const files = await dbHandler.getFilesByTitle(card.title);
-        if (files.length === 0) {
-          logs.push(`No file found for card "${card.title}"`);
-          continue;
-        }
+      for (const exportState of whiteboardExports) {
+        if (!exportState.enabled) continue;
+        const cards = filterCardsInWhiteboards(
+          new Set([exportState.whiteboardId]),
+          hbData,
+          {
+            includeSections:
+              exportState.selectType === "include"
+                ? exportState.selectedIds
+                : undefined,
+            excludeSections:
+              exportState.selectType === "exclude"
+                ? exportState.selectedIds
+                : undefined,
+          }
+        );
+        for (const card of cards) {
+          const files = await dbHandler.getFilesByTitle(card.title);
+          if (files.length === 0) {
+            logs.push(`No file found for card "${card.title}"`);
+            continue;
+          }
 
-        if (files.length > 1) {
-          // TODO: card.content と比較して一致するものを選択する
-          logs.push(
-            `Multiple files found for card "${
-              card.title
-            }". Including all files.: ${files.map((f) => f.path).join(", ")}`
-          );
-        }
+          if (files.length > 1) {
+            // TODO: card.content と比較して一致するものを選択する
+            logs.push(
+              `Multiple files found for card "${
+                card.title
+              }". Including all files.: ${files.map((f) => f.path).join(", ")}`
+            );
+          }
 
-        const serializedCard = serializeCard(card, files);
-        exports.push(serializedCard);
+          const serializedCard = serializeCard(card, files);
+          exports.push(serializedCard);
+        }
       }
 
       const exportData = exports.join("");
@@ -159,6 +169,7 @@ export default function Account({
       logs.push(
         `Error: ${error instanceof Error ? error.message : String(error)}`
       );
+      throw error;
     } finally {
       setIsExporting(false);
       setExportLogs(logs);
