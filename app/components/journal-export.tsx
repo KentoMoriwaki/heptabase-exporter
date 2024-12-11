@@ -85,7 +85,7 @@ export function JournalExport({
               onValueChange={(value) => onSelectChange(value)}
               value={value.type}
             >
-              <SelectTrigger id="period-select">
+              <SelectTrigger id="period-select" className="w-[180px]">
                 <SelectValue placeholder="Select a period" />
               </SelectTrigger>
               <SelectContent>
@@ -134,6 +134,7 @@ export function JournalExport({
               <Label htmlFor="custom-days">Number of Days</Label>
               <Input
                 id="custom-days"
+                className="w-[180px]"
                 type="number"
                 placeholder="Enter number of days"
                 value={value.days}

@@ -281,7 +281,7 @@ export default function Account({
       </header>
       <div className={cn("container mx-auto p-4")}>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Heptabase Whiteboard Tree</h1>
+          <h1 className="text-2xl font-bold">Export</h1>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">
               {whiteboardExportsCount + journalExportCount} item(s) selected
