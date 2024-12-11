@@ -60,10 +60,14 @@ export function buildWhiteboardTree({
           instanceMap[instance.whiteboardId]
         );
       } else {
-        roots.push(instanceMap[instance.whiteboardId]);
+        if (!instanceMap[instance.whiteboardId].isTrashed) {
+          roots.push(instanceMap[instance.whiteboardId]);
+        }
       }
     } else {
-      roots.push(instanceMap[instance.whiteboardId]);
+      if (!instanceMap[instance.whiteboardId].isTrashed) {
+        roots.push(instanceMap[instance.whiteboardId]);
+      }
     }
   });
 

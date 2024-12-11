@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronRight, ChevronDown, Trash } from "lucide-react";
 import { formatDate } from "../lib/date";
 import { Button } from "@/components/ui/button";
