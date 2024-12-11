@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/select";
 import { JournalExportState } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 type JournalExportType = JournalExportState["type"];
@@ -171,7 +170,7 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {selected ? format(selected, "PPP") : <span>Pick a date</span>}
+          {selected ? selected.toLocaleDateString() : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

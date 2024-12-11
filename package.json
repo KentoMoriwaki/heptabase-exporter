@@ -22,7 +22,6 @@
     "@tanstack/react-table": "^8.20.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
     "isbot": "^5.1.17",
     "lucide-react": "^0.462.0",
     "react": "^18.3.1",
@@ -44,7 +43,7 @@
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
-    "vite-tsconfig-paths": "^5.1.2",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.8"
   }
 }

@@ -337,12 +337,18 @@ export interface HBSectionObjectRelation {
   id: string;
   sectionId: string;
   objectId: string;
-  objectType: string;
+  objectType: string; // "cardInstance" or "section"
 }
 
 export interface HBSection {
   id: string;
-  name: string;
+  whiteboardId: string;
+  title: string;
+  color: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   createdTime: string;
   lastEditedTime: string;
   createdBy: string;

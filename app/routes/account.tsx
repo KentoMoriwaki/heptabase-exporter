@@ -11,7 +11,12 @@ import {
 import { WhiteboardTree } from "@/components/whiteboard-tree";
 import { formatDate } from "@/lib/date";
 import { HBCard, HBData } from "@/lib/hb-types";
-import { buildWhiteboardTree, filterCardsInWhiteboards } from "@/lib/hb-utils";
+import {
+  buildWhiteboardTree,
+  filterCardsInWhiteboards,
+  HBWhiteboardTree,
+  SectionNode,
+} from "@/lib/hb-utils";
 import {
   FileEntity,
   getIDBHandler,
@@ -47,16 +52,16 @@ export default function Account({
   params: { accountId },
 }: Route.ComponentProps) {
   const whiteboardTree = useMemo(() => {
-    const tree = buildWhiteboardTree(
-      hbData.whiteBoardList,
-      hbData.whiteboardInstances
-    );
+    const tree = buildWhiteboardTree(hbData);
     return tree;
   }, [hbData]);
 
   const [checkedItems, setCheckedItems] = useState<Set<string>>(
     () => new Set(lastExportState.whiteboards?.selectedIds)
   );
+  const [checkedSections, setCheckedSections] = useState<
+    Map<string, boolean | null>
+  >(new Map());
 
   const [journalExport, setJournalExport] = useState<{
     enabled?: boolean;
@@ -75,16 +80,104 @@ export default function Account({
 
   const [activeTab, setActiveTab] = useState("whiteboards");
 
-  const handleCheck = (id: string, isChecked: boolean) => {
+  const onWhitebaordCheck = (whiteboardId: string, isChecked: boolean) => {
     setCheckedItems((prevCheckedItems) => {
       const newCheckedItems = new Set(prevCheckedItems);
       if (isChecked) {
-        newCheckedItems.add(id);
+        newCheckedItems.add(whiteboardId);
       } else {
-        newCheckedItems.delete(id);
+        newCheckedItems.delete(whiteboardId);
       }
       return newCheckedItems;
     });
+  };
+
+  const findWhiteboardbyId = (id: string) => {
+    // Find whiteboard from whiteboardTree
+    for (const tree of whiteboardTree) {
+      const findWhiteboard = (
+        tree: HBWhiteboardTree
+      ): HBWhiteboardTree | null => {
+        if (tree.id === id) {
+          return tree;
+        }
+        for (const child of tree.children) {
+          const found = findWhiteboard(child);
+          if (found) {
+            return found;
+          }
+        }
+        return null;
+      };
+      const found = findWhiteboard(tree);
+      if (found) return found;
+    }
+  };
+
+  const onSectionCheck = (
+    whiteboardId: string,
+    sectionId: string,
+    isChecked: boolean
+  ) => {
+    const updatedCheckedSections = new Map(checkedSections);
+    const whiteboard = findWhiteboardbyId(whiteboardId);
+    if (!whiteboard) return;
+
+    const updateSectionAndChildren = (sectionId: string, checked: boolean) => {
+      updatedCheckedSections.set(sectionId, checked);
+      const section = findSectionById(sectionId, whiteboard.sections);
+      if (section) {
+        section.children.forEach((child) =>
+          updateSectionAndChildren(child.id, checked)
+        );
+      }
+    };
+
+    const updateParentSections = (sectionId: string) => {
+      const parentSection = findParentSection(sectionId, whiteboard.sections);
+      if (parentSection) {
+        const childStates = parentSection.children.map((child) =>
+          updatedCheckedSections.get(child.id)
+        );
+        const allChecked = childStates.every((state) => state === true);
+        const noneChecked = childStates.every((state) => state === false);
+
+        const parentState = allChecked ? true : noneChecked ? false : null;
+        updatedCheckedSections.set(parentSection.id, parentState);
+
+        updateParentSections(parentSection.id);
+      }
+    };
+
+    updateSectionAndChildren(sectionId, isChecked);
+    updateParentSections(sectionId);
+
+    setCheckedSections(updatedCheckedSections);
+  };
+
+  const findSectionById = (
+    id: string,
+    sections: SectionNode[]
+  ): SectionNode | null => {
+    for (const section of sections) {
+      if (section.id === id) return section;
+      const child = findSectionById(id, section.children);
+      if (child) return child;
+    }
+    return null;
+  };
+
+  const findParentSection = (
+    id: string,
+    sections: SectionNode[],
+    parent: SectionNode | null = null
+  ): SectionNode | null => {
+    for (const section of sections) {
+      if (section.id === id) return parent;
+      const found = findParentSection(id, section.children, section);
+      if (found) return found;
+    }
+    return null;
   };
 
   const handleExport = async (action: "file" | "clipboard") => {
@@ -323,8 +416,10 @@ export default function Account({
               <WhiteboardTree
                 key={tree.id}
                 tree={tree}
-                onCheck={handleCheck}
+                onWhiteboardCheck={onWhitebaordCheck}
                 checkedItems={checkedItems}
+                checkedSections={checkedSections}
+                onSectionCheck={onSectionCheck}
               />
             ))}
           </TabsContent>
