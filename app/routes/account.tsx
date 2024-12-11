@@ -332,14 +332,16 @@ export default function Account({
             Journals
           </TabsTrigger>
           <TabsContent value="whiteboards">
-            {whiteboardTree.map((tree) => (
-              <WhiteboardTree
-                key={tree.id}
-                tree={tree}
-                exportStates={whiteboardExports}
-                onExportStateChange={onWhiteboardExportsChanged}
-              />
-            ))}
+            <div className="flex flex-col gap-2">
+              {whiteboardTree.map((tree) => (
+                <WhiteboardTree
+                  key={tree.id}
+                  tree={tree}
+                  exportStates={whiteboardExports}
+                  onExportStateChange={onWhiteboardExportsChanged}
+                />
+              ))}
+            </div>
           </TabsContent>
 
           <TabsContent value="journals">

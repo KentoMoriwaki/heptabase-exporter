@@ -6,6 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { HBWhiteboardTree, SectionNode } from "@/lib/hb-utils";
 import { WhiteboardExportState } from "@/lib/indexed-db";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 interface WhiteboardTreeProps {
   tree: HBWhiteboardTree;
@@ -23,13 +35,9 @@ export function WhiteboardTree({
   exportStates,
   onExportStateChange,
 }: WhiteboardTreeProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-
   const isChecked = exportStates.some(
     (state) => state.whiteboardId === tree.id && state.enabled
   );
-
-  const toggleExpand = () => setIsExpanded(!isExpanded);
 
   const updateExport = (
     whiteboardId: string,
@@ -104,23 +112,9 @@ export function WhiteboardTree({
   })();
 
   return (
-    <Card className="mb-2">
-      <CardContent className="p-2">
-        <div className="flex items-center">
-          {tree.children.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleExpand}
-              className="mr-2"
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </Button>
-          )}
+    <Card className="">
+      <CardContent className="px-4 py-2">
+        <div className="flex items-start">
           <div className="flex-grow">
             <h3 className="text-lg font-semibold">{tree.name}</h3>
             <p className="text-sm text-gray-500">
@@ -130,7 +124,8 @@ export function WhiteboardTree({
           </div>
           {tree.isTrashed && <Trash className="h-4 w-4 text-red-500 ml-2" />}
         </div>
-        <div className="flex items-center space-x-2">
+
+        <div className="flex items-center space-x-2 my-2">
           <Checkbox
             checked={isChecked}
             onCheckedChange={(checked) => {
@@ -140,7 +135,6 @@ export function WhiteboardTree({
               }));
             }}
             id={`export-${tree.id}`}
-            className="mr-2"
           />
           <label
             htmlFor={`export-${tree.id}`}
@@ -151,27 +145,84 @@ export function WhiteboardTree({
         </div>
 
         {exportState.enabled && (
-          <div className="ml-6 mt-2">
-            {tree.sections.map((section) => (
-              <SectionTree
-                key={section.id}
-                section={section}
-                onCheck={onSectionCheck}
-                checkedSections={exportState.selectedIds}
+          <div className="mt-2 flex gap-2">
+            <Select
+              value={exportState.selectType ?? "all"}
+              onValueChange={(value) => {
+                updateExport(tree.id, (currentExport) => ({
+                  ...currentExport,
+                  selectType:
+                    value === "all" ||
+                    value === "include" ||
+                    value === "exclude"
+                      ? value
+                      : "all",
+                }));
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select cards to include" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All cards</SelectItem>
+                <SelectItem value="include">
+                  Include cards in sections
+                </SelectItem>
+                <SelectItem value="exclude">
+                  Exclude cards in sections
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {exportState.selectType === "include" ||
+            exportState.selectType === "exclude" ? (
+              <Popover>
+                <PopoverTrigger>
+                  <Button variant="secondary">
+                    {exportState.selectedIds.length > 0
+                      ? `Sections (${exportState.selectedIds.length})`
+                      : "Select sections"}
+                    {exportState.selectedIds.length > 0 ? (
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  {tree.sections.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {tree.sections.map((section) => (
+                        <SectionTree
+                          key={section.id}
+                          section={section}
+                          onCheck={onSectionCheck}
+                          checkedSections={exportState.selectedIds}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 text-sm italic">
+                      No sections in this whiteboard
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            ) : null}
+          </div>
+        )}
+        {tree.children.length > 0 && (
+          <div className="mt-2 flex flex-col gap-2">
+            {tree.children.map((child) => (
+              <WhiteboardTree
+                key={child.id}
+                tree={child}
+                level={level + 1}
+                exportStates={exportStates}
+                onExportStateChange={onExportStateChange}
               />
             ))}
           </div>
         )}
-        {isExpanded &&
-          tree.children.map((child) => (
-            <WhiteboardTree
-              key={child.id}
-              tree={child}
-              level={level + 1}
-              exportStates={exportStates}
-              onExportStateChange={onExportStateChange}
-            />
-          ))}
       </CardContent>
     </Card>
   );
@@ -194,15 +245,23 @@ function SectionTree(props: {
   };
 
   return (
-    <div key={section.id} className="ml-4">
-      <Checkbox
-        checked={isIndeterminate ? "indeterminate" : isChecked}
-        onCheckedChange={handleCheck}
-        className="mr-2"
-      />
-      <span>{section.title}</span>
+    <div key={section.id} className="mt-1">
+      <div className="flex items-center">
+        <Checkbox
+          checked={isIndeterminate ? "indeterminate" : isChecked}
+          onCheckedChange={handleCheck}
+          className="mr-2"
+          id={`section-${section.id}`}
+        />
+        <label
+          htmlFor={`section-${section.id}`}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          {section.title}
+        </label>
+      </div>
       {section.children.length > 0 && (
-        <div className="ml-4">
+        <div className="ml-4 mt-1 flex flex-col gap-1">
           {section.children.map((child) => (
             <SectionTree
               key={child.id}
