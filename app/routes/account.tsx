@@ -22,6 +22,7 @@ import {
   getIDBHandler,
   getIDBMasterHandler,
   JournalExportState,
+  WhiteboardExportState,
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
 import { Copy, Download, FileDown, Upload } from "lucide-react";
@@ -56,12 +57,9 @@ export default function Account({
     return tree;
   }, [hbData]);
 
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(
-    () => new Set(lastExportState.whiteboards?.selectedIds)
-  );
-  const [checkedSections, setCheckedSections] = useState<
-    Map<string, boolean | null>
-  >(new Map());
+  const [whiteboardExports, setWhiteboardExports] = useState<
+    WhiteboardExportState[]
+  >(lastExportState.whiteboards ?? []);
 
   const [journalExport, setJournalExport] = useState<{
     enabled?: boolean;
@@ -80,104 +78,24 @@ export default function Account({
 
   const [activeTab, setActiveTab] = useState("whiteboards");
 
-  const onWhitebaordCheck = (whiteboardId: string, isChecked: boolean) => {
-    setCheckedItems((prevCheckedItems) => {
-      const newCheckedItems = new Set(prevCheckedItems);
-      if (isChecked) {
-        newCheckedItems.add(whiteboardId);
-      } else {
-        newCheckedItems.delete(whiteboardId);
-      }
-      return newCheckedItems;
-    });
-  };
-
-  const findWhiteboardbyId = (id: string) => {
-    // Find whiteboard from whiteboardTree
-    for (const tree of whiteboardTree) {
-      const findWhiteboard = (
-        tree: HBWhiteboardTree
-      ): HBWhiteboardTree | null => {
-        if (tree.id === id) {
-          return tree;
-        }
-        for (const child of tree.children) {
-          const found = findWhiteboard(child);
-          if (found) {
-            return found;
-          }
-        }
-        return null;
-      };
-      const found = findWhiteboard(tree);
-      if (found) return found;
-    }
-  };
-
-  const onSectionCheck = (
+  const onWhiteboardExportsChanged = (
     whiteboardId: string,
-    sectionId: string,
-    isChecked: boolean
+    state: WhiteboardExportState
   ) => {
-    const updatedCheckedSections = new Map(checkedSections);
-    const whiteboard = findWhiteboardbyId(whiteboardId);
-    if (!whiteboard) return;
-
-    const updateSectionAndChildren = (sectionId: string, checked: boolean) => {
-      updatedCheckedSections.set(sectionId, checked);
-      const section = findSectionById(sectionId, whiteboard.sections);
-      if (section) {
-        section.children.forEach((child) =>
-          updateSectionAndChildren(child.id, checked)
-        );
+    setWhiteboardExports((exports) => {
+      let found = false;
+      const newExports = exports.map((exportState) => {
+        if (exportState.whiteboardId === whiteboardId) {
+          found = true;
+          return { ...exportState, ...state };
+        }
+        return exportState;
+      });
+      if (found) {
+        return newExports;
       }
-    };
-
-    const updateParentSections = (sectionId: string) => {
-      const parentSection = findParentSection(sectionId, whiteboard.sections);
-      if (parentSection) {
-        const childStates = parentSection.children.map((child) =>
-          updatedCheckedSections.get(child.id)
-        );
-        const allChecked = childStates.every((state) => state === true);
-        const noneChecked = childStates.every((state) => state === false);
-
-        const parentState = allChecked ? true : noneChecked ? false : null;
-        updatedCheckedSections.set(parentSection.id, parentState);
-
-        updateParentSections(parentSection.id);
-      }
-    };
-
-    updateSectionAndChildren(sectionId, isChecked);
-    updateParentSections(sectionId);
-
-    setCheckedSections(updatedCheckedSections);
-  };
-
-  const findSectionById = (
-    id: string,
-    sections: SectionNode[]
-  ): SectionNode | null => {
-    for (const section of sections) {
-      if (section.id === id) return section;
-      const child = findSectionById(id, section.children);
-      if (child) return child;
-    }
-    return null;
-  };
-
-  const findParentSection = (
-    id: string,
-    sections: SectionNode[],
-    parent: SectionNode | null = null
-  ): SectionNode | null => {
-    for (const section of sections) {
-      if (section.id === id) return parent;
-      const found = findParentSection(id, section.children, section);
-      if (found) return found;
-    }
-    return null;
+      return [...newExports, { ...state }];
+    });
   };
 
   const handleExport = async (action: "file" | "clipboard") => {
@@ -188,7 +106,9 @@ export default function Account({
     try {
       const dbHandler = await getIDBHandler(accountId);
       const cards = filterCardsInWhiteboards(
-        checkedItems,
+        new Set(
+          whiteboardExports.filter((e) => e.enabled).map((e) => e.whiteboardId)
+        ),
         hbData.cardList,
         hbData.cardInstances
       );
@@ -232,9 +152,7 @@ export default function Account({
         logs.push("Export completed successfully.");
       }
       await dbHandler.saveLastExportState({
-        whiteboards: {
-          selectedIds: Array.from(checkedItems),
-        },
+        whiteboards: whiteboardExports,
         journals: journalExport,
       });
     } catch (error) {
@@ -323,7 +241,11 @@ export default function Account({
     };
   }, [accountId]);
 
-  const isExportDisabled = checkedItems.size === 0 && !journalExport?.enabled;
+  const whiteboardExportsCount = whiteboardExports.filter(
+    (e) => e.enabled
+  ).length;
+  const journalExportCount = journalExport?.enabled ? 1 : 0;
+  const isExportDisabled = whiteboardExportsCount + journalExportCount === 0;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     useFsAccessApi: false,
@@ -351,7 +273,7 @@ export default function Account({
           <h1 className="text-2xl font-bold">Heptabase Whiteboard Tree</h1>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">
-              {checkedItems.size} item(s) selected
+              {whiteboardExportsCount + journalExportCount} item(s) selected
             </span>
             <div>
               <input
@@ -397,7 +319,10 @@ export default function Account({
           sent to the server.
         </p>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-          <TabsTrigger value="whiteboards" selectedCount={checkedItems.size}>
+          <TabsTrigger
+            value="whiteboards"
+            selectedCount={whiteboardExportsCount}
+          >
             Whiteboards
           </TabsTrigger>
           <TabsTrigger
@@ -407,19 +332,12 @@ export default function Account({
             Journals
           </TabsTrigger>
           <TabsContent value="whiteboards">
-            <div className="mb-4">
-              <span className="text-sm text-gray-500">
-                {checkedItems.size} item(s) selected
-              </span>
-            </div>
             {whiteboardTree.map((tree) => (
               <WhiteboardTree
                 key={tree.id}
                 tree={tree}
-                onWhiteboardCheck={onWhitebaordCheck}
-                checkedItems={checkedItems}
-                checkedSections={checkedSections}
-                onSectionCheck={onSectionCheck}
+                exportStates={whiteboardExports}
+                onExportStateChange={onWhiteboardExportsChanged}
               />
             ))}
           </TabsContent>

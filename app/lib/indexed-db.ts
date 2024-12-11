@@ -18,13 +18,18 @@ export type FileEntity = {
 
 export type ExportStateEntity = {
   id: string;
-  whiteboards?: {
-    selectedIds: string[];
-  };
+  whiteboards?: WhiteboardExportState[];
   journals?: {
     enabled?: boolean;
     config: JournalExportState;
   };
+};
+
+export type WhiteboardExportState = {
+  whiteboardId: string;
+  enabled: boolean;
+  selectType: "all" | "include" | "exclude";
+  selectedIds: string[];
 };
 
 export type JournalExportState =
