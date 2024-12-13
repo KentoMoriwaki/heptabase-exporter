@@ -23,6 +23,7 @@ export type ExportStateEntity = {
     enabled?: boolean;
     config: JournalExportState;
   };
+  tags?: TagsExportState;
 };
 
 export type WhiteboardExportState = {
@@ -30,6 +31,10 @@ export type WhiteboardExportState = {
   enabled: boolean;
   selectType: "all" | "include" | "exclude";
   selectedIds: string[];
+};
+
+export type TagsExportState = {
+  selectedViews: Set<string>;
 };
 
 export type JournalExportState =

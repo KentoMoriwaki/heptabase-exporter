@@ -116,8 +116,34 @@ export interface HBCollectionPropertyRelation {
 export interface HBCollectionView {
   id: string;
   collectionId: string;
-  viewType: string;
-  settings: Record<string, any>;
+  type: string;
+  name: string;
+  objectSort: string[];
+  config: {
+    tableProperties: Array<{
+      id: string;
+      width: number;
+      shouldWrap: boolean;
+    }>;
+    kanban: {
+      columnBy: string | null;
+      options: any[];
+    };
+  };
+  filterConfig: {
+    combinator: string;
+    rules: Array<{
+      id: string;
+      operator: string;
+      value: string;
+      field: string;
+    }>;
+  };
+  sortConfig: any[];
+  createdTime: string;
+  lastEditedTime: string;
+  createdBy: string;
+  spaceId: string;
 }
 
 export interface HBCollection {
@@ -127,6 +153,11 @@ export interface HBCollection {
   lastEditedTime: string;
   createdBy: string;
   spaceId: string;
+  queryConfig: {
+    id: string;
+    type: string;
+  };
+  viewIds: string[];
 }
 
 export interface HBConnection {

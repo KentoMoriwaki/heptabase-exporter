@@ -65,8 +65,7 @@ export function JournalExport({
   };
 
   return (
-    <div className="mt-8 p-4 border rounded-lg">
-      <h2 className="text-xl font-bold mb-4">Export Journals</h2>
+    <div className="mt-8">
       <div className="flex items-center space-x-2 mb-4">
         <Checkbox
           id="export-journals"

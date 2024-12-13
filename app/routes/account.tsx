@@ -30,6 +30,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
+import { TagsExport } from "@/components/tags-export";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -68,6 +69,10 @@ export default function Account({
     enabled: lastExportState.journals?.enabled,
     config: lastExportState.journals?.config ?? { type: "this-week" },
   });
+
+  const [tagsExport, setTagsExport] = useState<{
+    selectedViews: Set<string>;
+  }>(lastExportState.tags ?? { selectedViews: new Set() });
 
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -164,6 +169,7 @@ export default function Account({
       await dbHandler.saveLastExportState({
         whiteboards: whiteboardExports,
         journals: journalExport,
+        tags: tagsExport,
       });
     } catch (error) {
       logs.push(
@@ -342,6 +348,12 @@ export default function Account({
           >
             Journals
           </TabsTrigger>
+          <TabsTrigger
+            value="tags"
+            selectedCount={tagsExport.selectedViews.size}
+          >
+            Tags
+          </TabsTrigger>
           <TabsContent value="whiteboards">
             <div className="flex flex-col gap-2">
               {whiteboardTree.map((tree) => (
@@ -364,6 +376,16 @@ export default function Account({
               value={journalExport.config}
               onValueChange={(config) => {
                 setJournalExport((prev) => ({ ...prev, config }));
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="tags">
+            <TagsExport
+              data={hbData}
+              selectedViews={tagsExport.selectedViews}
+              onSelectedViewsChange={(views) => {
+                setTagsExport((prev) => ({ ...prev, selectedViews: views }));
               }}
             />
           </TabsContent>
