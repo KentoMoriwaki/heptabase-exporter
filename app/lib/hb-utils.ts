@@ -3,6 +3,7 @@ import {
   HBCardInstance,
   HBCollectionView,
   HBData,
+  HBFilterConfig,
   HBWhiteboard,
   HBWhiteboardInstance,
 } from "./hb-types";

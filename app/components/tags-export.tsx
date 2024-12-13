@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
+import { useMemo } from "react";
 
 export function TagsExport({
   data,
@@ -20,7 +21,7 @@ export function TagsExport({
   selectedViews: Set<string>;
   onSelectedViewsChange: (views: Set<string>) => void;
 }) {
-  const tagGroups = aggeregateToTagGroups(data);
+  const tagGroups = useMemo(() => aggeregateToTagGroups(data), [data]);
 
   return (
     <div className="mt-8 space-y-6">

@@ -11,12 +11,7 @@ import {
 import { WhiteboardTree } from "@/components/whiteboard-tree";
 import { formatDate } from "@/lib/date";
 import { HBCard, HBData } from "@/lib/hb-types";
-import {
-  buildWhiteboardTree,
-  filterCardsInWhiteboards,
-  HBWhiteboardTree,
-  SectionNode,
-} from "@/lib/hb-utils";
+import { buildWhiteboardTree, filterCardsInWhiteboards } from "@/lib/hb-utils";
 import {
   FileEntity,
   getIDBHandler,
@@ -31,6 +26,7 @@ import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
 import { TagsExport } from "@/components/tags-export";
+import { filterCardsByViews } from "@/lib/hb-filter";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -110,7 +106,8 @@ export default function Account({
 
     try {
       const dbHandler = await getIDBHandler(accountId);
-      const exports: string[] = [];
+      const exportCards: HBCard[] = [];
+      // See whiteboard
       for (const exportState of whiteboardExports) {
         if (!exportState.enabled) continue;
         const cards = filterCardsInWhiteboards(
@@ -127,25 +124,36 @@ export default function Account({
                 : undefined,
           }
         );
-        for (const card of cards) {
-          const files = await dbHandler.getFilesByTitle(card.title);
-          if (files.length === 0) {
-            logs.push(`No file found for card "${card.title}"`);
-            continue;
-          }
+        exportCards.push(...cards);
+      }
 
-          if (files.length > 1) {
-            // TODO: card.content と比較して一致するものを選択する
-            logs.push(
-              `Multiple files found for card "${
-                card.title
-              }". Including all files.: ${files.map((f) => f.path).join(", ")}`
-            );
-          }
+      // TODO: See journal
 
-          const serializedCard = serializeCard(card, files);
-          exports.push(serializedCard);
+      // See tags
+      const tagCards = filterCardsByViews(hbData, [
+        ...tagsExport.selectedViews,
+      ]);
+      exportCards.push(...tagCards);
+
+      const exports: string[] = [];
+      for (const card of exportCards) {
+        const files = await dbHandler.getFilesByTitle(card.title);
+        if (files.length === 0) {
+          logs.push(`No file found for card "${card.title}"`);
+          continue;
         }
+
+        if (files.length > 1) {
+          // TODO: card.content と比較して一致するものを選択する
+          logs.push(
+            `Multiple files found for card "${
+              card.title
+            }". Including all files.: ${files.map((f) => f.path).join(", ")}`
+          );
+        }
+
+        const serializedCard = serializeCard(card, files);
+        exports.push(serializedCard);
       }
 
       const exportData = exports.join("");

@@ -130,21 +130,23 @@ export interface HBCollectionView {
       options: any[];
     };
   };
-  filterConfig: {
-    combinator: string;
-    rules: Array<{
-      id: string;
-      operator: string;
-      value: string;
-      field: string;
-    }>;
-  };
+  filterConfig: HBFilterConfig;
   sortConfig: any[];
   createdTime: string;
   lastEditedTime: string;
   createdBy: string;
   spaceId: string;
 }
+
+export type HBFilterConfig = {
+  combinator: string;
+  rules: Array<{
+    id: string;
+    operator: string;
+    value: string;
+    field: string;
+  }>;
+};
 
 export interface HBCollection {
   id: string;
@@ -498,11 +500,15 @@ export interface HBMindMap {
   createdBy: string;
   spaceId: string;
 }
-
 export interface HBObjectPropertyRelation {
   id: string;
   objectId: string;
   propertyId: string;
+  value: { value: string };
+  createdTime: string;
+  lastEditedTime: string;
+  createdBy: string;
+  spaceId: string;
 }
 
 export interface HBWhiteboardInstance {
