@@ -131,12 +131,38 @@ export default function Account({
 
       const journals = journalsFilter(hbData, journalExport.config);
       for (const journal of journals) {
-        const files = await dbHandler.getFilesByTitle(journal.date, "Journal");
+        const files = await dbHandler.getFilesByTitle(
+          `Journal/${journal.date}.md`,
+          { exact: true }
+        );
         if (files.length === 0) {
           logs.push(`No file found for journal "${journal.date}"`);
           continue;
         }
         exports.push(serializeJournal(journal, files));
+        const linkedFiles = files.flatMap(findLinkedFiles);
+        for (const linkedFile of linkedFiles) {
+          const dir = linkedFile.split("/")[0];
+          switch (dir) {
+            case "Card Library":
+            case "Journal": {
+              const [file] = await dbHandler.getFilesByTitle(linkedFile, {
+                exact: true,
+              });
+              if (file) {
+                exports.push(
+                  `---\n\n${new TextDecoder().decode(file.content)}\n\n`
+                );
+              }
+              break;
+            }
+            default: {
+              logs.push(
+                `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`
+              );
+            }
+          }
+        }
       }
 
       // See tags
@@ -147,8 +173,10 @@ export default function Account({
 
       for (const card of exportCards) {
         const files = await dbHandler.getFilesByTitle(
-          card.title,
-          "Card Library"
+          `Card Library/${card.title}`,
+          {
+            exact: false,
+          }
         );
         if (files.length === 0) {
           logs.push(`No file found for card "${card.title}"`);
@@ -453,4 +481,47 @@ function serializeJournal(journal: HBJournal, files: FileEntity[]): string {
       return `---\n\n${content}\n\n`;
     })
     .join("");
+}
+
+function findLinkedFiles(file: FileEntity) {
+  const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const content = new TextDecoder().decode(file.content);
+  const linkedFiles: string[] = [];
+  let match;
+  while ((match = markdownLinkRegex.exec(content)) !== null) {
+    const relativePath = decodeURIComponent(match[2]);
+    const resolvedPath = resolveAbsolutePath(file.path, relativePath);
+    linkedFiles.push(resolvedPath);
+  }
+  return linkedFiles;
+}
+function resolveAbsolutePath(
+  currentFilePath: string,
+  relativePath: string
+): string {
+  // 1. 現在のファイルのディレクトリパスを取得
+  const currentDir = currentFilePath.substring(
+    0,
+    currentFilePath.lastIndexOf("/")
+  );
+
+  // 2. 相対パスのセグメントを分割
+  const segments = relativePath.split("/");
+
+  // 3. 現在のディレクトリから始まるパスセグメントの配列を作成
+  const resultSegments = currentDir.split("/");
+
+  // 4. 各セグメントを処理
+  for (const segment of segments) {
+    if (segment === ".") {
+      continue; // 現在のディレクトリは無視
+    } else if (segment === "..") {
+      resultSegments.pop(); // 一つ上のディレクトリへ
+    } else {
+      resultSegments.push(segment); // 通常のパスセグメントを追加
+    }
+  }
+
+  // 5. パスセグメントを結合して最終的な絶対パスを作成
+  return resultSegments.join("/");
 }

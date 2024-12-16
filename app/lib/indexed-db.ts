@@ -275,25 +275,23 @@ export class AccountDBHandler extends IndexedDBHandler {
 
   getFilesByTitle(
     title: string,
-    dir:
-      | "Card Library"
-      | "Journal"
-      | "Highlight"
-      | "Insight"
-      | "Mindmap"
-      | "Text Element"
-      | "Whiteboard"
+    { exact }: { exact: boolean }
   ): Promise<FileEntity[]> {
     return new Promise((resolve, reject) => {
-      const normalizedTitle = title.normalize().replaceAll(/[\/\?:]/g, "!");
+      const pathIndex = title.indexOf("/");
+      const normalizedTitle = [
+        title.substring(0, pathIndex),
+        title
+          .substring(pathIndex + 1)
+          .normalize()
+          .replaceAll(/[\/\?:]/g, "!"),
+      ].join("/");
       const transaction = this.db.transaction("files", "readonly");
       const store = transaction.objectStore("files");
       const index = store.index("path");
-      const pathPrefix = `${dir}/`;
-      const range = IDBKeyRange.bound(
-        `${pathPrefix}${normalizedTitle}`,
-        `${pathPrefix}${normalizedTitle}\uffff`
-      );
+      const range = exact
+        ? IDBKeyRange.only(normalizedTitle)
+        : IDBKeyRange.bound(normalizedTitle, `${normalizedTitle}\uffff`);
       const request = index.openCursor(range);
 
       const files: FileEntity[] = [];
@@ -306,6 +304,7 @@ export class AccountDBHandler extends IndexedDBHandler {
           cursor.continue();
         } else {
           const filteredFiles = files.filter((file) => {
+            if (exact) return true;
             const name = file.name;
             if (
               name.startsWith(normalizedTitle) &&
