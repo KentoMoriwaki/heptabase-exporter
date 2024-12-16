@@ -1,3 +1,4 @@
+import { JournalFilter } from "./hb-journals-filter";
 import { HBData } from "./hb-types";
 
 export type AccountEntity = {
@@ -37,28 +38,7 @@ export type TagsExportState = {
   selectedViews: Set<string>;
 };
 
-export type JournalExportState =
-  | {
-      type: "this-week";
-    }
-  | {
-      type: "this-month";
-    }
-  | {
-      type: "last-month";
-    }
-  | {
-      type: "this-year";
-    }
-  | {
-      type: "custom";
-      startDate: Date | null;
-      endDate: Date | null;
-    }
-  | {
-      type: "last-n-days";
-      days: number;
-    };
+export type JournalExportState = JournalFilter;
 
 const defaultExportStateId = "default";
 
@@ -293,13 +273,23 @@ export class AccountDBHandler extends IndexedDBHandler {
     });
   }
 
-  getFilesByTitle(title: string): Promise<FileEntity[]> {
+  getFilesByTitle(
+    title: string,
+    dir:
+      | "Card Library"
+      | "Journal"
+      | "Highlight"
+      | "Insight"
+      | "Mindmap"
+      | "Text Element"
+      | "Whiteboard"
+  ): Promise<FileEntity[]> {
     return new Promise((resolve, reject) => {
       const normalizedTitle = title.normalize().replaceAll(/[\/\?:]/g, "!");
       const transaction = this.db.transaction("files", "readonly");
       const store = transaction.objectStore("files");
       const index = store.index("path");
-      const pathPrefix = "Card Library/";
+      const pathPrefix = `${dir}/`;
       const range = IDBKeyRange.bound(
         `${pathPrefix}${normalizedTitle}`,
         `${pathPrefix}${normalizedTitle}\uffff`

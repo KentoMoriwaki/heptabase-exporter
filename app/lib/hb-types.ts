@@ -222,8 +222,13 @@ export interface HBInsight {
 
 export interface HBJournal {
   id: string;
-  name: string;
+  date: string; // e.g. "2024-03-25"
+  content: string;
+  propertiesConfig: Array<{ id: string }>;
+  insights: any[];
+  wasInsightGenerated: boolean;
   createdTime: string;
+  lastUsedTime: string;
   lastEditedTime: string;
   createdBy: string;
   spaceId: string;

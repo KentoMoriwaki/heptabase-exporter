@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WhiteboardTree } from "@/components/whiteboard-tree";
 import { formatDate } from "@/lib/date";
-import { HBCard, HBData } from "@/lib/hb-types";
+import { HBCard, HBData, HBJournal } from "@/lib/hb-types";
 import { buildWhiteboardTree, filterCardsInWhiteboards } from "@/lib/hb-utils";
 import {
   FileEntity,
@@ -27,6 +27,7 @@ import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
 import { TagsExport } from "@/components/tags-export";
 import { filterCardsByViews } from "@/lib/hb-filter";
+import { journalsFilter } from "@/lib/hb-journals-filter";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -103,6 +104,7 @@ export default function Account({
     setIsExporting(true);
     setExportLogs([]);
     const logs: string[] = [];
+    const exports: string[] = [];
 
     try {
       const dbHandler = await getIDBHandler(accountId);
@@ -127,7 +129,15 @@ export default function Account({
         exportCards.push(...cards);
       }
 
-      // TODO: See journal
+      const journals = journalsFilter(hbData, journalExport.config);
+      for (const journal of journals) {
+        const files = await dbHandler.getFilesByTitle(journal.date, "Journal");
+        if (files.length === 0) {
+          logs.push(`No file found for journal "${journal.date}"`);
+          continue;
+        }
+        exports.push(serializeJournal(journal, files));
+      }
 
       // See tags
       const tagCards = filterCardsByViews(hbData, [
@@ -135,9 +145,11 @@ export default function Account({
       ]);
       exportCards.push(...tagCards);
 
-      const exports: string[] = [];
       for (const card of exportCards) {
-        const files = await dbHandler.getFilesByTitle(card.title);
+        const files = await dbHandler.getFilesByTitle(
+          card.title,
+          "Card Library"
+        );
         if (files.length === 0) {
           logs.push(`No file found for card "${card.title}"`);
           continue;
@@ -416,6 +428,21 @@ function serializeCard(card: HBCard, files: FileEntity[]): string {
       `Created At: ${formatDate(card.createdTime)}`,
       `File: ${file.path}`,
     ];
+    const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
+    const content = new TextDecoder().decode(file.content);
+    return `${commentsStr}\n\n${content}`;
+  });
+
+  return contents
+    .map((content) => {
+      return `---\n\n${content}\n\n`;
+    })
+    .join("");
+}
+
+function serializeJournal(journal: HBJournal, files: FileEntity[]): string {
+  const contents = files.map((file) => {
+    const comments = [`Journal Date: ${journal.date}`, `File: ${file.path}`];
     const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
     const content = new TextDecoder().decode(file.content);
     return `${commentsStr}\n\n${content}`;
