@@ -48,8 +48,6 @@ export type ExportHistoryEntity = {
   name: string;
 };
 
-const defaultExportStateId = "default";
-
 const DBNamePrefix = "HeptabaseDB";
 const masterDBName = "HeptabaseMasterDB";
 
@@ -348,6 +346,33 @@ export class AccountDBHandler extends IndexedDBHandler {
     });
   }
 
+  async cleanupOldExportHistory() {
+    const MAX_HISTORY_ITEMS = 100;
+    const tx = this.db.transaction(["exportHistory"], "readwrite");
+    const store = tx.objectStore("exportHistory");
+
+    // 日付でソートして古い順に取得
+    const request = await store.index("date").getAll();
+    const histories: ExportHistoryEntity[] = request.result;
+
+    // 星付きのものを除外し、MAX_HISTORY_ITEMS件を超える古いものを削除
+    const unstarredHistories = histories.filter((h) => !h.isStarred);
+    const deleteCount = Math.max(
+      0,
+      unstarredHistories.length - MAX_HISTORY_ITEMS
+    );
+
+    if (deleteCount > 0) {
+      const toDelete = unstarredHistories
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .slice(0, deleteCount);
+
+      for (const item of toDelete) {
+        await store.delete(item.id);
+      }
+    }
+  }
+
   async saveExportHistory(history: ExportHistoryEntity): Promise<void> {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("exportHistory", "readwrite");
@@ -360,7 +385,10 @@ export class AccountDBHandler extends IndexedDBHandler {
       };
       const request = store.put(historyWithNumericDate);
 
-      request.onsuccess = () => resolve();
+      request.onsuccess = async () => {
+        await this.cleanupOldExportHistory();
+        resolve();
+      };
       request.onerror = () => reject(request.error);
     });
   }
