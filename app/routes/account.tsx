@@ -13,10 +13,12 @@ import { formatDate } from "@/lib/date";
 import { HBCard, HBData, HBJournal } from "@/lib/hb-types";
 import { buildWhiteboardTree, filterCardsInWhiteboards } from "@/lib/hb-utils";
 import {
+  AccountDBHandler,
   FileEntity,
   getIDBHandler,
   getIDBMasterHandler,
   JournalExportState,
+  TagsExportState,
   WhiteboardExportState,
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
@@ -104,99 +106,19 @@ export default function Account({
     setIsExporting(true);
     setExportLogs([]);
     const logs: string[] = [];
-    const exports: string[] = [];
 
     try {
       const dbHandler = await getIDBHandler(accountId);
-      const exportCards: HBCard[] = [];
-      // See whiteboard
-      for (const exportState of whiteboardExports) {
-        if (!exportState.enabled) continue;
-        const cards = filterCardsInWhiteboards(
-          new Set([exportState.whiteboardId]),
-          hbData,
-          {
-            includeSections:
-              exportState.selectType === "include"
-                ? exportState.selectedIds
-                : undefined,
-            excludeSections:
-              exportState.selectType === "exclude"
-                ? exportState.selectedIds
-                : undefined,
-          }
-        );
-        exportCards.push(...cards);
+      const exporter = new Exporter(dbHandler, hbData);
+
+      await exporter.exportWhiteboards(whiteboardExports);
+      if (journalExport.enabled) {
+        await exporter.exportJournals(journalExport.config);
       }
+      await exporter.exportTags(tagsExport);
 
-      const journals = journalsFilter(hbData, journalExport.config);
-      for (const journal of journals) {
-        const files = await dbHandler.getFilesByTitle(
-          `Journal/${journal.date}.md`,
-          { exact: true }
-        );
-        if (files.length === 0) {
-          logs.push(`No file found for journal "${journal.date}"`);
-          continue;
-        }
-        exports.push(serializeJournal(journal, files));
-        const linkedFiles = files.flatMap(findLinkedFiles);
-        for (const linkedFile of linkedFiles) {
-          const dir = linkedFile.split("/")[0];
-          switch (dir) {
-            case "Card Library":
-            case "Journal": {
-              const [file] = await dbHandler.getFilesByTitle(linkedFile, {
-                exact: true,
-              });
-              if (file) {
-                exports.push(
-                  `---\n\n${new TextDecoder().decode(file.content)}\n\n`
-                );
-              }
-              break;
-            }
-            default: {
-              logs.push(
-                `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`
-              );
-            }
-          }
-        }
-      }
-
-      // See tags
-      const tagCards = filterCardsByViews(hbData, [
-        ...tagsExport.selectedViews,
-      ]);
-      exportCards.push(...tagCards);
-
-      for (const card of exportCards) {
-        const files = await dbHandler.getFilesByTitle(
-          `Card Library/${card.title}`,
-          {
-            exact: false,
-          }
-        );
-        if (files.length === 0) {
-          logs.push(`No file found for card "${card.title}"`);
-          continue;
-        }
-
-        if (files.length > 1) {
-          // TODO: card.content と比較して一致するものを選択する
-          logs.push(
-            `Multiple files found for card "${
-              card.title
-            }". Including all files.: ${files.map((f) => f.path).join(", ")}`
-          );
-        }
-
-        const serializedCard = serializeCard(card, files);
-        exports.push(serializedCard);
-      }
-
-      const exportData = exports.join("");
+      const exportData = exporter.getExportData();
+      logs.push(...exporter.getLogs());
 
       if (action === "clipboard") {
         navigator.clipboard.writeText(exportData);
@@ -310,7 +232,11 @@ export default function Account({
     (e) => e.enabled
   ).length;
   const journalExportCount = journalExport?.enabled ? 1 : 0;
-  const isExportDisabled = whiteboardExportsCount + journalExportCount === 0;
+  const isExportDisabled =
+    whiteboardExportsCount +
+      journalExportCount +
+      tagsExport.selectedViews.size ===
+    0;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     useFsAccessApi: false,
@@ -524,4 +450,146 @@ function resolveAbsolutePath(
 
   // 5. パスセグメントを結合して最終的な絶対パスを作成
   return resultSegments.join("/");
+}
+
+class Exporter {
+  private dbHandler: AccountDBHandler;
+  private hbData: HBData;
+  private exports: string[] = [];
+  private logs: string[] = [];
+  private exportedFiles: Set<string> = new Set();
+
+  constructor(dbHandler: AccountDBHandler, hbData: HBData) {
+    this.dbHandler = dbHandler;
+    this.hbData = hbData;
+  }
+
+  async exportWhiteboards(whiteboardExports: WhiteboardExportState[]) {
+    for (const exportState of whiteboardExports) {
+      if (!exportState.enabled) continue;
+      const cards = filterCardsInWhiteboards(
+        new Set([exportState.whiteboardId]),
+        this.hbData,
+        {
+          includeSections:
+            exportState.selectType === "include"
+              ? exportState.selectedIds
+              : undefined,
+          excludeSections:
+            exportState.selectType === "exclude"
+              ? exportState.selectedIds
+              : undefined,
+        }
+      );
+      await this.exportCards(cards);
+    }
+  }
+
+  async exportJournals(journalExport: JournalExportState) {
+    const journals = journalsFilter(this.hbData, journalExport);
+    for (const journal of journals) {
+      const files = await this.dbHandler.getFilesByTitle(
+        `Journal/${journal.date}.md`,
+        { exact: true }
+      );
+      if (files.length === 0) {
+        this.logs.push(`No file found for journal "${journal.date}"`);
+        continue;
+      }
+
+      for (const file of files) {
+        this.exportFile(file, {
+          "Journal Date": journal.date,
+          File: file.path,
+        });
+      }
+    }
+  }
+
+  async exportTags(tagsExport: TagsExportState) {
+    const tagCards = filterCardsByViews(this.hbData, [
+      ...tagsExport.selectedViews,
+    ]);
+    await this.exportCards(tagCards);
+  }
+
+  private async exportCards(cards: HBCard[]) {
+    for (const card of cards) {
+      const files = await this.dbHandler.getFilesByTitle(
+        `Card Library/${card.title}`,
+        {
+          exact: false,
+        }
+      );
+      if (files.length === 0) {
+        this.logs.push(`No file found for card "${card.title}"`);
+        continue;
+      }
+      // TODO: Handle multiple files for a card
+      for (const file of files) {
+        this.exportFile(file, {
+          "Card Title": card.title,
+          "Created At": formatDate(card.createdTime),
+          File: file.path,
+        });
+      }
+    }
+  }
+
+  private exportFile(file: FileEntity, meta: Record<string, string>) {
+    if (this.exportedFiles.has(file.path)) return;
+    this.exportedFiles.add(file.path);
+    const comments = Object.entries(meta).map(
+      ([key, value]) => `${key}: ${value}`
+    );
+    const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
+    const content = new TextDecoder().decode(file.content);
+    this.exports.push(`---\n\n${commentsStr}\n\n${content}\n\n`);
+    const likedFiles = findLinkedFiles(file);
+    this.processLinkedFiles(likedFiles);
+  }
+
+  private async processLinkedFiles(linkedFiles: string[]) {
+    for (const linkedFile of linkedFiles) {
+      if (this.exportedFiles.has(linkedFile)) continue;
+      const dir = linkedFile.split("/")[0];
+      switch (dir) {
+        case "Card Library":
+        case "Journal": {
+          const [file] = await this.dbHandler.getFilesByTitle(linkedFile, {
+            exact: true,
+          });
+          if (file) {
+            this.exportedFiles.add(linkedFile);
+            this.exports.push(
+              `---\n\n${new TextDecoder().decode(file.content)}\n\n`
+            );
+            const furtherLinkedFiles = findLinkedFiles(file);
+            await this.processLinkedFiles(furtherLinkedFiles);
+          }
+          break;
+        }
+        default: {
+          this.logs.push(
+            `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`
+          );
+        }
+      }
+    }
+  }
+
+  private async addFilesToExport(files: FileEntity[]) {
+    for (const file of files) {
+      if (this.exportedFiles.has(file.path)) continue;
+      this.exportedFiles.add(file.path);
+    }
+  }
+
+  getExportData() {
+    return this.exports.join("");
+  }
+
+  getLogs() {
+    return this.logs;
+  }
 }

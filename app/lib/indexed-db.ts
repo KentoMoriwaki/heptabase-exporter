@@ -279,13 +279,12 @@ export class AccountDBHandler extends IndexedDBHandler {
   ): Promise<FileEntity[]> {
     return new Promise((resolve, reject) => {
       const pathIndex = title.indexOf("/");
-      const normalizedTitle = [
-        title.substring(0, pathIndex),
-        title
-          .substring(pathIndex + 1)
-          .normalize()
-          .replaceAll(/[\/\?:]/g, "!"),
-      ].join("/");
+      const dir = title.substring(0, pathIndex);
+      const fileName = title
+        .substring(pathIndex + 1)
+        .normalize()
+        .replaceAll(/[\/\?:]/g, "!");
+      const normalizedTitle = [dir, fileName].join("/");
       const transaction = this.db.transaction("files", "readonly");
       const store = transaction.objectStore("files");
       const index = store.index("path");
@@ -307,8 +306,8 @@ export class AccountDBHandler extends IndexedDBHandler {
             if (exact) return true;
             const name = file.name;
             if (
-              name.startsWith(normalizedTitle) &&
-              name.substring(normalizedTitle.length).match(/^(\s\d+)?\.md$/)
+              name.startsWith(fileName) &&
+              name.substring(fileName.length).match(/^(\s\d+)?\.md$/)
             ) {
               return true;
             }
