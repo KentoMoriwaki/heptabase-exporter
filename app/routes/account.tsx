@@ -402,7 +402,12 @@ function AccountInner({
 
         <ExportLogModal
           isOpen={isLogModalOpen}
-          onClose={() => setIsLogModalOpen(false)}
+          onClose={() => {
+            setIsLogModalOpen(false);
+            navigate({
+              search: "",
+            });
+          }}
           logs={exportLogs}
         />
       </div>

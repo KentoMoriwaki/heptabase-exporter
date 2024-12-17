@@ -134,14 +134,22 @@ export const ExportHistory: React.FC<{ accountId: string }> = ({
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
+  const loadHistory = async () => {
+    const dbHandler = await getIDBHandler(accountId);
+    const historyItems = await dbHandler.getExportHistory();
+    setHistory(historyItems);
+  };
+
   useEffect(() => {
-    const loadHistory = async () => {
-      const dbHandler = await getIDBHandler(accountId);
-      const historyItems = await dbHandler.getExportHistory();
-      setHistory(historyItems);
-    };
     loadHistory();
   }, [accountId]);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      loadHistory();
+    }
+  };
 
   const handleRestore = async (item: HistoryItem) => {
     setIsOpen(false); // Close the popover when selecting a history item
@@ -174,7 +182,7 @@ export const ExportHistory: React.FC<{ accountId: string }> = ({
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-10 p-0">
           <Clock className="h-4 w-4" />
