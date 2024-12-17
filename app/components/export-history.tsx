@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Star, Trash2, Pencil, Check, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock } from "lucide-react";
 import { ExportStateEntity, getIDBHandler } from "@/lib/indexed-db";
+import { Check, Clock, Pencil, Star, Trash2, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router";
 
 type HistoryListProps = {
   items: HistoryItem[];
@@ -84,16 +84,19 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             </div>
           ) : (
             <>
-              <div
-                className="flex-1 cursor-pointer"
+              <Link
+                to={{
+                  search: `?h=${item.id}`,
+                }}
+                className="flex-1"
                 onClick={() => onRestore(item)}
               >
                 <div className="font-medium">{item.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {item.date.toLocaleDateString()}
                 </div>
-              </div>
-              <div className="flex space-x-2">
+              </Link>
+              <div className="flex space-x-0">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -141,8 +144,7 @@ export const ExportHistory: React.FC<{ accountId: string }> = ({
   }, [accountId]);
 
   const handleRestore = async (item: HistoryItem) => {
-    // リロードして選択した履歴の状態を反映
-    window.location.reload();
+    setIsOpen(false); // Close the popover when selecting a history item
   };
 
   const handleDelete = async (id: string) => {

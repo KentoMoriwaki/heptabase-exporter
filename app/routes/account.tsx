@@ -14,6 +14,7 @@ import { HBExporter } from "@/lib/hb-exporter";
 import { HBData } from "@/lib/hb-types";
 import { buildWhiteboardTree } from "@/lib/hb-utils";
 import {
+  ExportStateEntity,
   getIDBHandler,
   getIDBMasterHandler,
   JournalExportState,
@@ -37,15 +38,41 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+export async function clientLoader({
+  params,
+  request,
+}: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler(params.accountId);
   const hbData = await dbHandler.getAllDataJson();
-  const latestHistory = await dbHandler.getLatestExportHistory();
-  const lastState = latestHistory?.state ?? { id: "default" };
+
+  // URLから history ID を取得
+  const url = new URL(request.url);
+  const historyId = url.searchParams.get("h");
+
+  let lastState: ExportStateEntity;
+  if (historyId) {
+    // history ID が指定されていれば、その履歴を1件だけ取得
+    const selectedHistory = await dbHandler.getExportHistoryById(historyId);
+    lastState = selectedHistory?.state ?? { id: "default" };
+  } else {
+    // 指定がなければ最新の履歴を取得
+    const latestHistory = await dbHandler.getLatestExportHistory();
+    lastState = latestHistory?.state ?? { id: "default" };
+  }
+
   return { hbData, lastState };
 }
 
-export default function Account({
+export default function AccountPage(props: Route.ComponentProps) {
+  return (
+    <AccountInner
+      {...props}
+      key={`${props.params.accountId}-${props.loaderData.lastState.id}`}
+    />
+  );
+}
+
+function AccountInner({
   loaderData: { hbData, lastState },
   params: { accountId },
 }: Route.ComponentProps) {

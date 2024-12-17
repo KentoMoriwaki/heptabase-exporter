@@ -370,14 +370,41 @@ export class AccountDBHandler extends IndexedDBHandler {
       const transaction = this.db.transaction("exportHistory", "readonly");
       const store = transaction.objectStore("exportHistory");
       const index = store.index("date");
-      const request = index.getAll();
+      const request = index.openCursor(null, "prev");
+
+      const items: ExportHistoryEntity[] = [];
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          items.push({
+            ...cursor.value,
+            date: new Date(cursor.value.date),
+          });
+          cursor.continue();
+        } else {
+          resolve(items);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getExportHistoryById(id: string): Promise<ExportHistoryEntity | null> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("exportHistory", "readonly");
+      const store = transaction.objectStore("exportHistory");
+      const request = store.get(id);
 
       request.onsuccess = () => {
-        const items = request.result.map((item) => ({
-          ...item,
-          date: new Date(item.date),
-        }));
-        resolve(items);
+        const item = request.result;
+        if (item) {
+          resolve({
+            ...item,
+            date: new Date(item.date),
+          });
+        } else {
+          resolve(null);
+        }
       };
       request.onerror = () => reject(request.error);
     });
