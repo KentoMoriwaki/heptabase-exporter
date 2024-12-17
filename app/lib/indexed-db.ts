@@ -40,6 +40,14 @@ export type TagsExportState = {
 
 export type JournalExportState = JournalFilter;
 
+export type ExportHistoryEntity = {
+  id: string;
+  date: Date;
+  state: ExportStateEntity;
+  isStarred: boolean;
+  name: string;
+};
+
 const defaultExportStateId = "default";
 
 const DBNamePrefix = "HeptabaseDB";
@@ -55,7 +63,7 @@ export async function getIDBHandler(
   accountId: string
 ): Promise<AccountDBHandler> {
   const dbName = `${DBNamePrefix}_${accountId}`;
-  return _getIDBHandler(dbName, 1, AccountDBHandler);
+  return _getIDBHandler(dbName, 3, AccountDBHandler);
 }
 
 async function _getIDBHandler<T extends IndexedDBHandler>(
@@ -197,7 +205,7 @@ export class AccountDBHandler extends IndexedDBHandler {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
 
-      request.onupgradeneeded = () => {
+      request.onupgradeneeded = (event) => {
         const db = request.result;
         if (!db.objectStoreNames.contains("files")) {
           const fileStore = db.createObjectStore("files", {
@@ -205,9 +213,18 @@ export class AccountDBHandler extends IndexedDBHandler {
           });
           fileStore.createIndex("path", "path");
         }
-        if (!db.objectStoreNames.contains("exportState")) {
-          db.createObjectStore("exportState", { keyPath: "id" });
+        if (db.objectStoreNames.contains("exportState")) {
+          db.deleteObjectStore("exportState");
         }
+
+        // 既存のストアを削除して再作成することでインデックスを追加
+        if (db.objectStoreNames.contains("exportHistory")) {
+          db.deleteObjectStore("exportHistory");
+        }
+        const historyStore = db.createObjectStore("exportHistory", {
+          keyPath: "id",
+        });
+        historyStore.createIndex("date", "date");
       };
 
       request.onsuccess = () => {
@@ -331,32 +348,69 @@ export class AccountDBHandler extends IndexedDBHandler {
     });
   }
 
-  async saveLastExportState(state: Partial<ExportStateEntity>): Promise<void> {
-    const currentData = await this.getLastExportState();
+  async saveExportHistory(history: ExportHistoryEntity): Promise<void> {
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction("exportState", "readwrite");
-      const store = transaction.objectStore("exportState");
-      const entity: ExportStateEntity = {
-        ...currentData,
-        ...state,
+      const transaction = this.db.transaction("exportHistory", "readwrite");
+      const store = transaction.objectStore("exportHistory");
+      // date を数値に変換して保存
+      const historyWithNumericDate = {
+        ...history,
+        date:
+          history.date instanceof Date ? history.date.getTime() : history.date,
       };
-      const request = store.put(entity);
+      const request = store.put(historyWithNumericDate);
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
 
-  async getLastExportState() {
-    return new Promise<ExportStateEntity>((resolve, reject) => {
-      const transaction = this.db.transaction("exportState", "readonly");
-      const store = transaction.objectStore("exportState");
-      const request = store.get(defaultExportStateId);
+  async getExportHistory(): Promise<ExportHistoryEntity[]> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("exportHistory", "readonly");
+      const store = transaction.objectStore("exportHistory");
+      const index = store.index("date");
+      const request = index.getAll();
 
       request.onsuccess = () => {
-        const result: ExportStateEntity | undefined = request.result;
-        resolve(result ? result : { id: defaultExportStateId });
+        const items = request.result.map((item) => ({
+          ...item,
+          date: new Date(item.date),
+        }));
+        resolve(items);
       };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getLatestExportHistory(): Promise<ExportHistoryEntity | null> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("exportHistory", "readonly");
+      const store = transaction.objectStore("exportHistory");
+      const index = store.index("date");
+
+      // prev = null で最大値を取得
+      const request = index.openCursor(null, "prev");
+
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          resolve(cursor.value);
+        } else {
+          resolve(null);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteExportHistory(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction("exportHistory", "readwrite");
+      const store = transaction.objectStore("exportHistory");
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }

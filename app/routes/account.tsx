@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
+import { ExportHistory } from "@/components/export-history";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -39,12 +40,13 @@ export function meta({}: Route.MetaArgs) {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const dbHandler = await getIDBHandler(params.accountId);
   const hbData = await dbHandler.getAllDataJson();
-  const lastExportState = await dbHandler.getLastExportState();
-  return { hbData, lastExportState };
+  const latestHistory = await dbHandler.getLatestExportHistory();
+  const lastState = latestHistory?.state ?? { id: "default" };
+  return { hbData, lastState };
 }
 
 export default function Account({
-  loaderData: { hbData, lastExportState },
+  loaderData: { hbData, lastState },
   params: { accountId },
 }: Route.ComponentProps) {
   const whiteboardTree = useMemo(() => {
@@ -54,19 +56,19 @@ export default function Account({
 
   const [whiteboardExports, setWhiteboardExports] = useState<
     WhiteboardExportState[]
-  >(lastExportState.whiteboards ?? []);
+  >(lastState.whiteboards ?? []);
 
   const [journalExport, setJournalExport] = useState<{
     enabled?: boolean;
     config: JournalExportState;
   }>({
-    enabled: lastExportState.journals?.enabled,
-    config: lastExportState.journals?.config ?? { type: "this-week" },
+    enabled: lastState.journals?.enabled,
+    config: lastState.journals?.config ?? { type: "this-week" },
   });
 
   const [tagsExport, setTagsExport] = useState<{
     selectedViews: Set<string>;
-  }>(lastExportState.tags ?? { selectedViews: new Set() });
+  }>(lastState.tags ?? { selectedViews: new Set() });
 
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -115,6 +117,21 @@ export default function Account({
       const exportData = exporter.getExportData();
       logs.push(...exporter.getLogs());
 
+      // Save export history
+      const historyId = crypto.randomUUID();
+      await dbHandler.saveExportHistory({
+        id: historyId,
+        date: new Date(),
+        state: {
+          id: historyId,
+          whiteboards: whiteboardExports,
+          journals: journalExport,
+          tags: tagsExport,
+        },
+        isStarred: false,
+        name: `Export ${new Date().toLocaleString()}`,
+      });
+
       if (action === "clipboard") {
         navigator.clipboard.writeText(exportData);
         logs.push("Export completed successfully. Copied to clipboard.");
@@ -131,11 +148,6 @@ export default function Account({
 
         logs.push("Export completed successfully.");
       }
-      await dbHandler.saveLastExportState({
-        whiteboards: whiteboardExports,
-        journals: journalExport,
-        tags: tagsExport,
-      });
     } catch (error) {
       logs.push(
         `Error: ${error instanceof Error ? error.message : String(error)}`
@@ -298,6 +310,7 @@ export default function Account({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <ExportHistory accountId={accountId} />
           </div>
         </div>
         <p className="text-sm text-gray-500 mb-4">
