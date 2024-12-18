@@ -18,7 +18,7 @@ export function filterCardsAndJournals(
   >,
   filterConfig: HBFilterConfig
 ): Array<HBCard | HBJournal> {
-  // カードIDごとにプロパティ値をマッピング
+  // Map property values by card ID
   const cardProperties = new Map<string, Map<string, any>>();
 
   objectPropertyRelations.forEach((relation) => {
@@ -29,7 +29,7 @@ export function filterCardsAndJournals(
     propertyMap.set(relation.propertyId, relation.value.value);
   });
 
-  // プロパティIDからプロパティ型へのマッピング
+  // Mapping from property ID to property type
   const propertyTypes = new Map(properties.map((prop) => [prop.id, prop.type]));
 
   return [...cardList, ...journalList].filter((card) => {
@@ -74,13 +74,13 @@ export function filterCardsAndJournalsByViews(
   viewIds: string[]
 ): Array<HBCard | HBJournal> {
   const { collectionViews } = data;
-  // ビューIDからビューを取得するためのマップを作成
+  // Create a map to get views by view ID
   const viewsMap = new Map(collectionViews.map((view) => [view.id, view]));
 
-  // 結果を格納するオブジェクト
+  // Array to store results
   const result: Array<HBCard | HBJournal> = [];
 
-  // 各ビューIDに対してフィルタリングを実行
+  // Execute filtering for each view ID
   viewIds.forEach((viewId) => {
     const view = viewsMap.get(viewId);
     if (!view) {
@@ -113,7 +113,7 @@ function evaluateValue(
   filterValue: any,
   propertyType: PropertyType
 ): boolean {
-  // 空チェック系の演算子
+  // Operators for empty check
   if (operator === "isEmpty") {
     return (
       value == null ||
@@ -129,7 +129,7 @@ function evaluateValue(
     );
   }
 
-  // プロパティタイプごとの評価
+  // Evaluation by property type
   switch (propertyType) {
     case "text":
     case "url":
@@ -163,7 +163,7 @@ function evaluateTextValue(
   operator: string,
   filterValue: string | null
 ): boolean {
-  // filterValue を使用する operator の場合、filterValue が空なら true を返す
+  // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
     return [
       "=",
@@ -198,7 +198,7 @@ function evaluateNumberValue(
   operator: string,
   filterValue: number | null
 ): boolean {
-  // filterValue を使用する operator の場合、filterValue が空なら true を返す
+  // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
     return ["=", "!=", ">", "<", ">=", "<="].includes(operator);
   }
@@ -228,7 +228,7 @@ function evaluateSelectValue(
   operator: string,
   filterValue: string | null
 ): boolean {
-  // filterValue を使用する operator の場合、filterValue が空なら true を返す
+  // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
     return ["=", "!="].includes(operator);
   }
@@ -248,7 +248,7 @@ function evaluateMultiSelectValue(
   operator: string,
   filterValue: string | null
 ): boolean {
-  // filterValue を使用する operator の場合、filterValue が空なら true を返す
+  // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
     return ["contains", "doesNotContain"].includes(operator);
   }
@@ -270,7 +270,7 @@ function evaluateCheckboxValue(
   operator: string,
   filterValue: boolean | null
 ): boolean {
-  // filterValue を使用する operator の場合、filterValue が空なら true を返す
+  // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
     return ["=", "!="].includes(operator);
   }
@@ -292,7 +292,7 @@ function evaluateRelationValue(
   operator: string,
   filterValue: string[] | null
 ): boolean {
-  // filterValue を使用する operator の場合、filterValue が空なら true を返す
+  // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
     return ["contains", "doesNotContain"].includes(operator);
   }

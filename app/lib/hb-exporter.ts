@@ -172,8 +172,9 @@ export class HBExporter {
   ): FileEntity[] {
     if (files.length === 0) return [];
     if (files.length === 1) return files;
-    // content には ProseMirror の serialize された doc が入っている。
-    // content から textNode を順番に取り出して、それが files の前から順番に探して、見つからなかったものはそこで終了して、最後に残ったものを返す。
+    // ProseMirror serialized doc is stored in content.
+    // Extract textNodes in order from content, search files from the beginning,
+    // stop at the point where they are not found, and return the remaining ones.
     const texts = files.map((file) => new TextDecoder().decode(file.content));
     const indices = new Array(files.length).fill(0);
     for (const text of getTextFromContent(JSON.parse(content))) {
@@ -221,29 +222,20 @@ function resolveAbsolutePath(
   currentFilePath: string,
   relativePath: string
 ): string {
-  // 1. 現在のファイルのディレクトリパスを取得
   const currentDir = currentFilePath.substring(
     0,
     currentFilePath.lastIndexOf("/")
   );
-
-  // 2. 相対パスのセグメントを分割
   const segments = relativePath.split("/");
-
-  // 3. 現在のディレクトリから始まるパスセグメントの配列を作成
   const resultSegments = currentDir.split("/");
-
-  // 4. 各セグメントを処理
   for (const segment of segments) {
     if (segment === ".") {
-      continue; // 現在のディレクトリは無視
+      continue;
     } else if (segment === "..") {
-      resultSegments.pop(); // 一つ上のディレクトリへ
+      resultSegments.pop();
     } else {
-      resultSegments.push(segment); // 通常のパスセグメントを追加
+      resultSegments.push(segment);
     }
   }
-
-  // 5. パスセグメントを結合して最終的な絶対パスを作成
   return resultSegments.join("/");
 }

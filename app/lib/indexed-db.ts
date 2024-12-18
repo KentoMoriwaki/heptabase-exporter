@@ -215,7 +215,7 @@ export class AccountDBHandler extends IndexedDBHandler {
           db.deleteObjectStore("exportState");
         }
 
-        // 既存のストアを削除して再作成することでインデックスを追加
+        // Delete existing store and recreate to add index
         if (db.objectStoreNames.contains("exportHistory")) {
           db.deleteObjectStore("exportHistory");
         }
@@ -351,7 +351,7 @@ export class AccountDBHandler extends IndexedDBHandler {
     const tx = this.db.transaction(["exportHistory"], "readwrite");
     const store = tx.objectStore("exportHistory");
 
-    // 日付でソートして古い順に取得
+    // Sort by date and get in ascending order
     const histories: ExportHistoryEntity[] = await new Promise(
       (resolve, reject) => {
         const request = store.index("date").getAll();
@@ -360,7 +360,7 @@ export class AccountDBHandler extends IndexedDBHandler {
       }
     );
 
-    // 星付きのものを除外し、MAX_HISTORY_ITEMS件を超える古いものを削除
+    // Exclude starred items and delete old items exceeding MAX_HISTORY_ITEMS
     const unstarredHistories = histories.filter((h) => !h.isStarred);
     const deleteCount = Math.max(
       0,
@@ -382,7 +382,7 @@ export class AccountDBHandler extends IndexedDBHandler {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("exportHistory", "readwrite");
       const store = transaction.objectStore("exportHistory");
-      // date を数値に変換して保存
+      // Convert date to numeric value and save
       const historyWithNumericDate = {
         ...history,
         date:
@@ -449,7 +449,7 @@ export class AccountDBHandler extends IndexedDBHandler {
       const store = transaction.objectStore("exportHistory");
       const index = store.index("date");
 
-      // prev = null で最大値を取得
+      // prev = null to get the maximum value
       const request = index.openCursor(null, "prev");
 
       request.onsuccess = () => {

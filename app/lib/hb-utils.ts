@@ -31,7 +31,7 @@ export function buildWhiteboardTree({
   | "sections"
   | "sectionObjectRelations"
 >): HBWhiteboardTree[] {
-  // インスタンスをIDでマッピング
+  // Map instances by ID
   const instanceMap: Record<string, HBWhiteboardTree> = {};
   whiteBoardList.forEach((whiteboard) => {
     const instance = whiteboardInstances.find(
@@ -124,11 +124,11 @@ export function filterCardsInWhiteboards(
     return true;
   });
 }
-// 指定したセクションに所属するカードを取得する関数
+// Function to get cards belonging to the specified section
 export function getCardsInSection(sectionId: string, data: HBData): string[] {
   const { sectionObjectRelations } = data;
 
-  // 再帰的にセクションとその子孫セクションを探索してカードを取得
+  // Recursively search sections and their descendant sections to get cards
   const findCards = (currentSectionId: string): string[] => {
     const cards = sectionObjectRelations
       .filter(
@@ -156,19 +156,19 @@ export function getCardsInSection(sectionId: string, data: HBData): string[] {
   return findCards(sectionId);
 }
 
-// 指定したホワイトボードに含まれるセクションを取得する関数
+// Function to get sections contained in the specified whiteboard
 function getSectionsInWhiteboard(
   whiteboardId: string,
   data: Pick<HBData, "sections" | "sectionObjectRelations">
 ): SectionNode[] {
   const { sections, sectionObjectRelations } = data;
 
-  // 指定されたホワイトボードに属するセクションを取得
+  // Get sections belonging to the specified whiteboard
   const whiteboardSections = sections.filter(
     (section) => section.whiteboardId === whiteboardId
   );
 
-  // セクションIDをキーにセクションをマッピング
+  // Map sections by section ID
   const sectionMap: Record<string, SectionNode> = {};
   whiteboardSections.forEach((section) => {
     sectionMap[section.id] = {
@@ -178,7 +178,7 @@ function getSectionsInWhiteboard(
     };
   });
 
-  // 親子関係を構築
+  // Build parent-child relationships
   sectionObjectRelations.forEach((relation) => {
     if (relation.objectType === "section" && sectionMap[relation.objectId]) {
       const parentSection = sectionMap[relation.sectionId];
@@ -189,7 +189,7 @@ function getSectionsInWhiteboard(
     }
   });
 
-  // トップレベルのセクションを抽出
+  // Extract top-level sections
   const rootSections = whiteboardSections.filter(
     (section) =>
       !sectionObjectRelations.some(
@@ -202,11 +202,11 @@ function getSectionsInWhiteboard(
 }
 
 type AggregatedTagGroup = {
-  groupName: string | null; // group に所属していない tag もある
+  groupName: string | null; // en: some tags are not in a group
   tags: Array<{
     tagId: string;
     tagName: string;
-    // tag が持つ views は .collections.queryConfig.type == "tag" になっているものの、.collections.queryConfig.id から引っ張れる
+    // en: views that the tag has, where .collections.queryConfig.type == "tag" and can be pulled from .collections.queryConfig.id
     views: HBCollectionView[];
   }>;
 };

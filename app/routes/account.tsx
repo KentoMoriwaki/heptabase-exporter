@@ -45,17 +45,17 @@ export async function clientLoader({
   const dbHandler = await getIDBHandler(params.accountId);
   const hbData = await dbHandler.getAllDataJson();
 
-  // URLから history ID を取得
+  // Get history ID from URL
   const url = new URL(request.url);
   const historyId = url.searchParams.get("h");
 
   let lastState: ExportStateEntity;
   if (historyId) {
-    // history ID が指定されていれば、その履歴を1件だけ取得
+    // If history ID is specified, get that history
     const selectedHistory = await dbHandler.getExportHistoryById(historyId);
     lastState = selectedHistory?.state ?? { id: "default" };
   } else {
-    // 指定がなければ最新の履歴を取得
+    // If not specified, get the latest history
     const latestHistory = await dbHandler.getLatestExportHistory();
     lastState = latestHistory?.state ?? { id: "default" };
   }

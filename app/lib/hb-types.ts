@@ -517,18 +517,18 @@ export interface HBObjectPropertyRelation {
 }
 
 export interface HBWhiteboardInstance {
-  id: string; // インスタンスの一意なID
-  whiteboardId: string; // このインスタンスに対応するホワイトボードのID
-  containerId: string; // 親要素のID (例: 親ホワイトボードまたはマップのID)
-  containerType: "map" | "whiteboard"; // 親要素のタイプ
-  isChild: boolean; // 子要素であるかどうか
-  color: string; // インスタンスの色設定
-  x: number; // インスタンスのX座標
-  y: number; // インスタンスのY座標
-  width: number; // インスタンスの幅
-  height: number; // インスタンスの高さ
-  createdTime: string; // 作成日時 (ISOフォーマット)
-  lastEditedTime: string; // 最終編集日時 (ISOフォーマット)
-  createdBy: string; // 作成者のID
-  spaceId: string; // 所属するスペースのID
+  id: string; // Unique ID of the instance
+  whiteboardId: string; // ID of the whiteboard corresponding to this instance
+  containerId: string; // ID of the parent element (e.g., parent whiteboard or map ID)
+  containerType: "map" | "whiteboard"; // Type of the parent element
+  isChild: boolean; // Whether it is a child element
+  color: string; // Color setting of the instance
+  x: number; // X coordinate of the instance
+  y: number; // Y coordinate of the instance
+  width: number; // Width of the instance
+  height: number; // Height of the instance
+  createdTime: string; // Creation date (ISO format)
+  lastEditedTime: string; // Last edited date (ISO format)
+  createdBy: string; // ID of the creator
+  spaceId: string; // ID of the space it belongs to
 }
