@@ -21,12 +21,16 @@ import {
   WhiteboardExportState,
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
-import { Copy, Download, FileDown, Upload } from "lucide-react";
+import { Copy, Download, FileDown, Settings, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
 import { ExportHistory } from "@/components/export-history";
+import {
+  ExportSettings,
+  ExportSettingsModal,
+} from "@/components/export-setings-modal";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -97,6 +101,17 @@ function AccountInner({
     selectedViews: Set<string>;
   }>(lastState.tags ?? { selectedViews: new Set() });
 
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [exportSettings, setExportSettings] = useState<ExportSettings>(
+    lastState.exportSettings ?? {
+      includeLinkedCards: true,
+      includeLinkedFiles: false,
+      includeImages: false,
+      includeAudioVideo: false,
+      includeOtherFiles: false,
+    }
+  );
+
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [exportLogs, setExportLogs] = useState<string[]>([]);
@@ -154,6 +169,7 @@ function AccountInner({
           whiteboards: whiteboardExports,
           journals: journalExport,
           tags: tagsExport,
+          exportSettings,
         },
         isStarred: false,
         name: `Export ${new Date().toLocaleString()}`,
@@ -326,7 +342,7 @@ function AccountInner({
                   className="flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  {isExporting ? "Exporting..." : "Export Selected"}
+                  {"Export Selected"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -334,12 +350,21 @@ function AccountInner({
                   <FileDown className="w-4 h-4 mr-2" />
                   Export as File
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("clipboard")}>
+                <DropdownMenuItem
+                  onClick={() => handleExport("clipboard")}
+                  disabled={exportSettings.includeLinkedFiles}
+                >
                   <Copy className="w-4 h-4 mr-2" />
                   Copy to Clipboard
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => setIsSettingsModalOpen(true)}
+              variant="outline"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
             <ExportHistory accountId={accountId} />
           </div>
         </div>
@@ -412,6 +437,13 @@ function AccountInner({
             });
           }}
           logs={exportLogs}
+        />
+
+        <ExportSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          settings={exportSettings}
+          onSettingsChange={setExportSettings}
         />
       </div>
     </div>

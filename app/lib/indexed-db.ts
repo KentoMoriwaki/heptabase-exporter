@@ -1,3 +1,4 @@
+import { ExportSettings } from "@/components/export-setings-modal";
 import { JournalFilter } from "./hb-journals-filter";
 import { HBData } from "./hb-types";
 
@@ -25,6 +26,7 @@ export type ExportStateEntity = {
     config: JournalExportState;
   };
   tags?: TagsExportState;
+  exportSettings?: ExportSettings;
 };
 
 export type WhiteboardExportState = {
