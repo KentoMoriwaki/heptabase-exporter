@@ -352,8 +352,13 @@ export class AccountDBHandler extends IndexedDBHandler {
     const store = tx.objectStore("exportHistory");
 
     // 日付でソートして古い順に取得
-    const request = await store.index("date").getAll();
-    const histories: ExportHistoryEntity[] = request.result;
+    const histories: ExportHistoryEntity[] = await new Promise(
+      (resolve, reject) => {
+        const request = store.index("date").getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      }
+    );
 
     // 星付きのものを除外し、MAX_HISTORY_ITEMS件を超える古いものを削除
     const unstarredHistories = histories.filter((h) => !h.isStarred);

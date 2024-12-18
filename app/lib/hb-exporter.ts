@@ -67,7 +67,7 @@ export class HBExporter {
   }
 
   private async exportCard(card: HBCard) {
-    const files = await this.dbHandler.getFilesByTitle(
+    let files = await this.dbHandler.getFilesByTitle(
       `Card Library/${card.title}`,
       {
         exact: false,
@@ -77,7 +77,14 @@ export class HBExporter {
       this.logs.push(`No file found for card "${card.title}"`);
       return;
     }
-    // TODO: Handle multiple files for a card
+    files = this.findBestMatchedFiles(files, card.content);
+    if (files.length > 1) {
+      this.logs.push(
+        `Multiple files found for card "${card.title}". Using all files. ${files
+          .map((file) => file.path)
+          .join(", ")}`
+      );
+    }
     for (const file of files) {
       this.exportFile(file, {
         "Card Title": card.title,
@@ -147,13 +154,6 @@ export class HBExporter {
     }
   }
 
-  private async addFilesToExport(files: FileEntity[]) {
-    for (const file of files) {
-      if (this.exportedFiles.has(file.path)) continue;
-      this.exportedFiles.add(file.path);
-    }
-  }
-
   getExportData() {
     return this.exports.join("");
   }
@@ -161,40 +161,44 @@ export class HBExporter {
   getLogs() {
     return this.logs;
   }
+
+  private findBestMatchedFiles(
+    files: FileEntity[],
+    content: any
+  ): FileEntity[] {
+    if (files.length === 0) return [];
+    if (files.length === 1) return files;
+    // content には ProseMirror の serialize された doc が入っている。
+    // content から textNode を順番に取り出して、それが files の前から順番に探して、見つからなかったものはそこで終了して、最後に残ったものを返す。
+    const texts = files.map((file) => new TextDecoder().decode(file.content));
+    const indices = new Array(files.length).fill(0);
+    for (const text of getTextFromContent(JSON.parse(content))) {
+      for (let i = 0; i < files.length; i++) {
+        if (indices[i] === -1) continue;
+        indices[i] = texts[i].indexOf(text, indices[i]);
+        if (
+          indices[i] === -1 &&
+          indices.filter((index) => index !== -1).length === 1
+        ) {
+          break;
+        }
+      }
+    }
+    return files.filter((_, i) => indices[i] !== -1);
+  }
 }
 
-function serializeCard(card: HBCard, files: FileEntity[]): string {
-  const contents = files.map((file) => {
-    const comments = [
-      `Card Title: ${card.title}`,
-      `Created At: ${formatDate(card.createdTime)}`,
-      `File: ${file.path}`,
-    ];
-    const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
-    const content = new TextDecoder().decode(file.content);
-    return `${commentsStr}\n\n${content}`;
-  });
-
-  return contents
-    .map((content) => {
-      return `---\n\n${content}\n\n`;
-    })
-    .join("");
-}
-
-function serializeJournal(journal: HBJournal, files: FileEntity[]): string {
-  const contents = files.map((file) => {
-    const comments = [`Journal Date: ${journal.date}`, `File: ${file.path}`];
-    const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
-    const content = new TextDecoder().decode(file.content);
-    return `${commentsStr}\n\n${content}`;
-  });
-
-  return contents
-    .map((content) => {
-      return `---\n\n${content}\n\n`;
-    })
-    .join("");
+function* getTextFromContent(node: any): Generator<string> {
+  if (node.type === "text") {
+    yield node.text;
+  }
+  if (node.content) {
+    for (const child of node.content) {
+      for (const text of getTextFromContent(child)) {
+        yield text;
+      }
+    }
+  }
 }
 
 function findLinkedFiles(file: FileEntity) {
