@@ -162,6 +162,10 @@ export class HBExporter {
     return this.logs;
   }
 
+  getExportCount() {
+    return this.exportedFiles.size;
+  }
+
   private findBestMatchedFiles(
     files: FileEntity[],
     content: any

@@ -161,19 +161,22 @@ function AccountInner({
 
       if (action === "clipboard") {
         navigator.clipboard.writeText(exportData);
-        logs.push("Export completed successfully. Copied to clipboard.");
+        logs.push(
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals copied to clipboard.`
+        );
       } else {
         const blob = new Blob([exportData], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "exported_whiteboards.txt";
+        a.download = `Heptabase_export_${new Date().toISOString()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
-        logs.push("Export completed successfully.");
+        logs.push(
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals exported.`
+        );
       }
     } catch (error) {
       logs.push(
