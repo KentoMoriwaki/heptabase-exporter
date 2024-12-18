@@ -148,7 +148,7 @@ function AccountInner({
 
     try {
       const dbHandler = await getIDBHandler(accountId);
-      const exporter = new HBExporter(dbHandler, hbData);
+      const exporter = new HBExporter(dbHandler, hbData, exportSettings);
 
       await exporter.exportWhiteboards(whiteboardExports);
       if (journalExport.enabled) {

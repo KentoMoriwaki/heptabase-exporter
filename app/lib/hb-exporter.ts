@@ -10,6 +10,7 @@ import {
 } from "@/lib/indexed-db";
 import { formatDate } from "./date";
 import { HBCard, HBData, HBJournal } from "./hb-types";
+import { ExportSettings } from "@/components/export-setings-modal";
 
 export class HBExporter {
   private dbHandler: AccountDBHandler;
@@ -17,10 +18,16 @@ export class HBExporter {
   private exports: string[] = [];
   private logs: string[] = [];
   private exportedFiles: Set<string> = new Set();
+  private exportSettings: ExportSettings;
 
-  constructor(dbHandler: AccountDBHandler, hbData: HBData) {
+  constructor(
+    dbHandler: AccountDBHandler,
+    hbData: HBData,
+    exportSettings: ExportSettings
+  ) {
     this.dbHandler = dbHandler;
     this.hbData = hbData;
+    this.exportSettings = exportSettings;
   }
 
   async exportWhiteboards(whiteboardExports: WhiteboardExportState[]) {
@@ -121,8 +128,10 @@ export class HBExporter {
     const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
     const content = new TextDecoder().decode(file.content);
     this.exports.push(`---\n\n${commentsStr}\n\n${content}\n\n`);
-    const likedFiles = findLinkedFiles(file);
-    this.processLinkedFiles(likedFiles);
+    if (this.exportSettings.includeLinkedCards) {
+      const likedFiles = findLinkedFiles(file);
+      this.processLinkedFiles(likedFiles);
+    }
   }
 
   private async processLinkedFiles(linkedFiles: string[]) {
@@ -136,12 +145,7 @@ export class HBExporter {
             exact: true,
           });
           if (file) {
-            this.exportedFiles.add(linkedFile);
-            this.exports.push(
-              `---\n\n${new TextDecoder().decode(file.content)}\n\n`
-            );
-            const furtherLinkedFiles = findLinkedFiles(file);
-            await this.processLinkedFiles(furtherLinkedFiles);
+            this.exportFile(file, { File: file.path });
           }
           break;
         }
