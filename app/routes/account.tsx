@@ -21,7 +21,14 @@ import {
   WhiteboardExportState,
 } from "@/lib/indexed-db";
 import { cn } from "@/lib/utils";
-import { Copy, Download, FileDown, Settings, Upload } from "lucide-react";
+import {
+  Copy,
+  Download,
+  FileDown,
+  FolderArchive,
+  Settings,
+  Upload,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router";
@@ -156,9 +163,6 @@ function AccountInner({
       }
       await exporter.exportTags(tagsExport);
 
-      const exportData = exporter.getExportData();
-      logs.push(...exporter.getLogs());
-
       // Save export history
       const historyId = crypto.randomUUID();
       await dbHandler.saveExportHistory({
@@ -175,12 +179,24 @@ function AccountInner({
         name: `Export ${new Date().toLocaleString()}`,
       });
 
-      if (action === "clipboard") {
-        navigator.clipboard.writeText(exportData);
+      logs.push(...exporter.getLogs());
+
+      if (exporter.exportAsZip) {
+        const zipData = await exporter.getExportZip();
+        const blob = new Blob([zipData], { type: "application/zip" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Heptabase_export_${new Date().toISOString()}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         logs.push(
-          `Export completed successfully. ${exporter.getExportCount()} cards/journals copied to clipboard.`
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals exported.`
         );
-      } else {
+      } else if (action === "file") {
+        const exportData = exporter.getExportMarkdown();
         const blob = new Blob([exportData], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -192,6 +208,12 @@ function AccountInner({
         URL.revokeObjectURL(url);
         logs.push(
           `Export completed successfully. ${exporter.getExportCount()} cards/journals exported.`
+        );
+      } else {
+        const exportData = exporter.getExportMarkdown();
+        navigator.clipboard.writeText(exportData);
+        logs.push(
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals copied to clipboard.`
         );
       }
     } catch (error) {
@@ -347,8 +369,15 @@ function AccountInner({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => handleExport("file")}>
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Export as File
+                  {exportSettings.includeLinkedFiles ? (
+                    <>
+                      <FolderArchive className="w-4 h-4 mr-2" /> Export as ZIP
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-4 h-4 mr-2" /> Export as Markdown
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleExport("clipboard")}

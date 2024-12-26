@@ -16,6 +16,7 @@ export type FileEntity = {
   type: string;
   size: number;
   content: ArrayBuffer;
+  lastModified: number;
 };
 
 export type ExportStateEntity = {
@@ -271,6 +272,7 @@ export class AccountDBHandler extends IndexedDBHandler {
         type: file.type,
         size: file.size,
         content: arrayBuffer,
+        lastModified: file.lastModified,
       };
       const request = store.put(entity);
 

@@ -1,3 +1,4 @@
+import { AsyncZipOptions, zip } from "fflate";
 import { filterCardsAndJournalsByViews } from "@/lib/hb-filter";
 import { journalsFilter } from "@/lib/hb-journals-filter";
 import {
@@ -229,11 +230,53 @@ export class HBExporter {
     }
   }
 
-  getExportData() {
-    if (this.assets.length > 0) {
-      console.log("Exporting assets is not supported yet.", this.assets);
-    }
+  get exportAsZip() {
+    return this.exportSettings.includeLinkedFiles;
+  }
+
+  getExportMarkdown() {
     return this.exports.join("");
+  }
+
+  async getExportZip(): Promise<Uint8Array> {
+    const files: { [key: string]: [Uint8Array, AsyncZipOptions] } = {};
+    files["export.md"] = [
+      new TextEncoder().encode(this.getExportMarkdown()),
+      {
+        level: 1,
+        mtime: new Date(),
+      },
+    ];
+
+    for (const asset of this.assets) {
+      if (!asset.path || !asset.content) continue;
+
+      try {
+        files[asset.path] = [
+          new Uint8Array(asset.content),
+          { mtime: new Date(asset.lastModified) },
+        ];
+      } catch (err) {
+        this.logs.push(`Failed to add ${asset.path} to ZIP: ${err}`);
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      zip(
+        files,
+        {
+          level: 1,
+          mtime: new Date(),
+        },
+        (err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
+        }
+      );
+    });
   }
 
   getLogs() {
