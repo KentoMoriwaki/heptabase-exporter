@@ -1,16 +1,9 @@
 import { HBData } from "@/lib/hb-types";
 import { aggeregateToTagGroups } from "@/lib/hb-utils";
-import {
-  Columns,
-  Grid3X3,
-  Hash,
-  LayoutGrid,
-  List,
-  SquareKanban,
-} from "lucide-react";
+import { Grid3X3, Hash, List, SquareKanban } from "lucide-react";
+import { useMemo } from "react";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
-import { useMemo } from "react";
 
 export function TagsExport({
   data,

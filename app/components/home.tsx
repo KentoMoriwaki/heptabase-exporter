@@ -120,14 +120,14 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
         >
           <Upload className="mx-auto mb-4 text-muted-foreground" size={48} />
           <h3 className="text-lg font-semibold mb-2">
-            Select a folder starting with "Heptabase-Data-Backup-"
+            Select a folder starting with &quot;Heptabase-Data-Backup-&quot;
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
             Or drag and drop the folder here
           </p>
           <input
             {...getInputProps({
-              // @ts-expect-error
+              // @ts-expect-error -- Ignore for now
               webkitdirectory: "true",
             })}
           />

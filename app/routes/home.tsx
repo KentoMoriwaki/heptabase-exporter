@@ -2,7 +2,7 @@ import { Home } from "@/components/home";
 import { getIDBMasterHandler } from "@/lib/indexed-db";
 import type { Route } from "./+types/home";
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_meta: Route.MetaArgs) {
   return [
     { title: "Bundle My Heptabase" },
     {
@@ -12,7 +12,7 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+export async function clientLoader(_args: Route.ClientLoaderArgs) {
   const masterDB = await getIDBMasterHandler();
   const accounts = await masterDB.getAccounts();
   return { accounts };

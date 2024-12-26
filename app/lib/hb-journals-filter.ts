@@ -32,31 +32,37 @@ export function journalsFilter(
   let endDate: Date | null = null;
 
   switch (filter.type) {
-    case "this-week":
+    case "this-week": {
       const startOfWeek = now.getDate() - now.getDay();
       startDate = new Date(now.setDate(startOfWeek));
       endDate = new Date(now.setDate(startOfWeek + 6));
       break;
-    case "this-month":
+    }
+    case "this-month": {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       break;
-    case "last-month":
+    }
+    case "last-month": {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       endDate = new Date(now.getFullYear(), now.getMonth(), 0);
       break;
-    case "this-year":
+    }
+    case "this-year": {
       startDate = new Date(now.getFullYear(), 0, 1);
       endDate = new Date(now.getFullYear(), 11, 31);
       break;
-    case "custom":
+    }
+    case "custom": {
       startDate = filter.startDate;
       endDate = filter.endDate;
       break;
-    case "last-n-days":
+    }
+    case "last-n-days": {
       startDate = new Date(now.setDate(now.getDate() - filter.days));
       endDate = new Date();
       break;
+    }
     default: {
       const _type: never = filter;
       throw new Error(`Invalid filter type: ${_type}`);

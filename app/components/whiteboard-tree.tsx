@@ -88,7 +88,7 @@ export function WhiteboardTree({
     if (found) return found;
   };
 
-  const onSectionCheck = (sectionId: string, isChecked: boolean) => {
+  const onSectionCheck = (sectionId: string) => {
     updateExport(tree.id, (currentExport, whiteboard) => {
       const selectedIds = toggleNodeSelection(
         sectionId,

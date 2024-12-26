@@ -40,7 +40,7 @@ import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_meta: Route.MetaArgs) {
   return [
     { title: "Bundle My Heptabase" },
     {
@@ -279,7 +279,7 @@ function AccountInner({
       setTimeout(() => {
         navigate(0);
       }, 1000);
-    } catch (error) {
+    } catch {
       setExportLogs(["Error: Invalid JSON file."]);
       setIsLogModalOpen(true);
     }
@@ -339,7 +339,7 @@ function AccountInner({
             <div>
               <input
                 {...getInputProps({
-                  // @ts-expect-error
+                  // @ts-expect-error -- webkitdirectory is not in the types
                   webkitdirectory: "true",
                 })}
               />

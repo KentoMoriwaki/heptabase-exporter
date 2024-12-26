@@ -1,10 +1,4 @@
-import {
-  HBCard,
-  HBData,
-  HBFilterConfig,
-  HBJournal,
-  HBProperty,
-} from "./hb-types";
+import { HBCard, HBData, HBFilterConfig, HBJournal } from "./hb-types";
 
 export function filterCardsAndJournals(
   {
@@ -19,6 +13,7 @@ export function filterCardsAndJournals(
   filterConfig: HBFilterConfig
 ): Array<HBCard | HBJournal> {
   // Map property values by card ID
+  //
   const cardProperties = new Map<string, Map<string, any>>();
 
   objectPropertyRelations.forEach((relation) => {

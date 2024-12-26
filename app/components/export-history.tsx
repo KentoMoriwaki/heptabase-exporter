@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExportStateEntity, getIDBHandler } from "@/lib/indexed-db";
 import { Check, Clock, Pencil, Star, Trash2, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 
 type HistoryListProps = {
@@ -134,15 +134,16 @@ export const ExportHistory: React.FC<{ accountId: string }> = ({
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     const dbHandler = await getIDBHandler(accountId);
     const historyItems = await dbHandler.getExportHistory();
     setHistory(historyItems);
-  };
+  }, [accountId]);
 
   useEffect(() => {
     loadHistory();
-  }, [accountId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only when mounted
+  }, []);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -151,7 +152,7 @@ export const ExportHistory: React.FC<{ accountId: string }> = ({
     }
   };
 
-  const handleRestore = async (item: HistoryItem) => {
+  const handleRestore = async (_item: HistoryItem) => {
     setIsOpen(false); // Close the popover when selecting a history item
   };
 

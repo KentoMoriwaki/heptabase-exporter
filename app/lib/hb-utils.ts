@@ -4,7 +4,6 @@ import {
   HBCollectionView,
   HBData,
   HBFile,
-  HBFilterConfig,
   HBMediaElement,
   HBPdfCard,
   HBPdfCardInstance,

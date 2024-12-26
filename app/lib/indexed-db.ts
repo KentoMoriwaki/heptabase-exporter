@@ -206,7 +206,7 @@ export class AccountDBHandler extends IndexedDBHandler {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = (_event) => {
         const db = request.result;
         if (!db.objectStoreNames.contains("files")) {
           const fileStore = db.createObjectStore("files", {
@@ -338,7 +338,7 @@ export class AccountDBHandler extends IndexedDBHandler {
   }
 
   async deleteFiles(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("files", "readwrite");
       const store = transaction.objectStore("files");
       const request = store.clear();
@@ -479,5 +479,5 @@ export class AccountDBHandler extends IndexedDBHandler {
 }
 
 export function normalizePathPart(fileName: string): string {
-  return fileName.normalize().replaceAll(/[\/\?:]/g, "!");
+  return fileName.normalize().replaceAll(/[/?:]/g, "!");
 }
