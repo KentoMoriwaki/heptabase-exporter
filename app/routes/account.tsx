@@ -117,7 +117,7 @@ function AccountInner({
       includeImages: false,
       includeAudioVideo: false,
       includeOtherFiles: false,
-    },
+    }
   );
 
   const [isExporting, setIsExporting] = useState(false);
@@ -131,7 +131,7 @@ function AccountInner({
 
   const onWhiteboardExportsChanged = (
     whiteboardId: string,
-    state: WhiteboardExportState,
+    state: WhiteboardExportState
   ) => {
     setWhiteboardExports((exports) => {
       let found = false;
@@ -194,7 +194,7 @@ function AccountInner({
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         logs.push(
-          `Export completed successfully. ${exporter.getExportCount()} cards/journals exported.`,
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals/files exported.`
         );
       } else if (action === "file") {
         const exportData = exporter.getExportMarkdown();
@@ -208,18 +208,18 @@ function AccountInner({
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         logs.push(
-          `Export completed successfully. ${exporter.getExportCount()} cards/journals exported.`,
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals/files exported.`
         );
       } else {
         const exportData = exporter.getExportMarkdown();
         navigator.clipboard.writeText(exportData);
         logs.push(
-          `Export completed successfully. ${exporter.getExportCount()} cards/journals copied to clipboard.`,
+          `Export completed successfully. ${exporter.getExportCount()} cards/journals/files copied to clipboard.`
         );
       }
     } catch (error) {
       logs.push(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
+        `Error: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     } finally {
@@ -242,13 +242,13 @@ function AccountInner({
       }
       if (!allDataFile) {
         throw new Error(
-          'The directory does not contain a file named "All-Data.json".',
+          'The directory does not contain a file named "All-Data.json".'
         );
       }
       const allData: HBData = JSON.parse(await allDataFile.text());
       if (allData.ACCOUNT_ID !== accountId) {
         throw new Error(
-          `The uploaded data is for account ID ${allData.ACCOUNT_ID}, not ${accountId}.`,
+          `The uploaded data is for account ID ${allData.ACCOUNT_ID}, not ${accountId}.`
         );
       }
 
@@ -256,7 +256,7 @@ function AccountInner({
       const allDataPath = allDataFile.path || allDataFile.webkitRelativePath;
       const rootDirPath = allDataPath.slice(
         0,
-        allDataPath.length - "All-Data.json".length,
+        allDataPath.length - "All-Data.json".length
       );
       const folderName = rootDirPath.replace(/^[/.]+|[/.]+$/g, "");
       await mainData.updateAccount({
@@ -305,7 +305,7 @@ function AccountInner({
   }, [accountId]);
 
   const whiteboardExportsCount = whiteboardExports.filter(
-    (e) => e.enabled,
+    (e) => e.enabled
   ).length;
   const journalExportCount = journalExport?.enabled ? 1 : 0;
   const isExportDisabled =
@@ -325,7 +325,7 @@ function AccountInner({
       {...rootProps}
       className={cn(
         "min-h-screen",
-        isDragActive && "bg-primary/10 border-2 border-dashed border-primary",
+        isDragActive && "bg-primary/10 border-2 border-dashed border-primary"
       )}
     >
       <Header />
