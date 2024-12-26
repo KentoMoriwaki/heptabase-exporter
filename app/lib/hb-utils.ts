@@ -3,7 +3,9 @@ import {
   HBCardInstance,
   HBCollectionView,
   HBData,
+  HBFile,
   HBFilterConfig,
+  HBMediaElement,
   HBWhiteboard,
   HBWhiteboardInstance,
 } from "./hb-types";
@@ -124,6 +126,79 @@ export function filterCardsInWhiteboards(
     return true;
   });
 }
+
+export function filterAssetsInWhiteboards(
+  whiteboardIds: Set<string>,
+  {
+    mediaElements,
+    sectionObjectRelations,
+    whiteBoardList,
+    files,
+  }: Pick<
+    HBData,
+    | "mediaElements"
+    | "pdfCardInstances"
+    | "pdfCards"
+    | "sectionObjectRelations"
+    | "whiteBoardList"
+    | "files"
+  >,
+  options: {
+    includeSections?: string[];
+    excludeSections?: string[];
+  }
+) {
+  const objectSections: Record<string, string> = {}; // mediaId,pdfId -> sectionId
+  sectionObjectRelations.forEach((relation) => {
+    if (relation.objectType !== "cardInstance") {
+      objectSections[relation.objectId] = relation.sectionId;
+    }
+  });
+  const whiteboards: Record<string, HBWhiteboard> = {}; // whiteboardId -> whiteboard
+  whiteBoardList.forEach((whiteboard) => {
+    whiteboards[whiteboard.id] = whiteboard;
+  });
+  const filesById: Record<string, HBFile> = {}; // fileId -> file
+  files.forEach((file) => {
+    filesById[file.id] = file;
+  });
+
+  const results: Record<
+    string,
+    { media?: HBMediaElement; whiteboard: HBWhiteboard; file: HBFile }
+  > = {}; // mediaId,pdfId -> { media, pdf, whiteboard }
+
+  mediaElements
+    .filter((media) => {
+      if (!whiteboardIds.has(media.whiteboardId)) {
+        return false;
+      }
+      if (options.includeSections) {
+        return (
+          objectSections[media.id] &&
+          options.includeSections.includes(objectSections[media.id])
+        );
+      }
+      if (options.excludeSections) {
+        return (
+          objectSections[media.id] &&
+          !options.excludeSections.includes(objectSections[media.id])
+        );
+      }
+      return true;
+    })
+    .forEach((media) => {
+      const whiteboard = whiteboards[media.whiteboardId];
+      const file = media.fileId ? filesById[media.fileId] : null;
+      if (file) {
+        results[media.id] = { media, whiteboard, file };
+      }
+      // TODO: Process non-File assets (e.g. YouTube)
+    });
+
+  return Object.values(results);
+}
+
 // Function to get cards belonging to the specified section
 export function getCardsInSection(sectionId: string, data: HBData): string[] {
   const { sectionObjectRelations } = data;

@@ -292,16 +292,12 @@ export class AccountDBHandler extends IndexedDBHandler {
 
   getFilesByTitle(
     title: string,
-    { exact }: { exact: boolean }
+    { exact, ext = "md" }: { exact: boolean; ext?: string }
   ): Promise<FileEntity[]> {
     return new Promise((resolve, reject) => {
-      const pathIndex = title.indexOf("/");
-      const dir = title.substring(0, pathIndex);
-      const fileName = title
-        .substring(pathIndex + 1)
-        .normalize()
-        .replaceAll(/[\/\?:]/g, "!");
-      const normalizedTitle = [dir, fileName].join("/");
+      const parts = title.split("/").map(normalizePathPart);
+      const fileName = parts[parts.length - 1];
+      const normalizedTitle = parts.join("/");
       const transaction = this.db.transaction("files", "readonly");
       const store = transaction.objectStore("files");
       const index = store.index("path");
@@ -324,7 +320,9 @@ export class AccountDBHandler extends IndexedDBHandler {
             const name = file.name;
             if (
               name.startsWith(fileName) &&
-              name.substring(fileName.length).match(/^(\s\d+)?\.md$/)
+              name
+                .substring(fileName.length)
+                .match(new RegExp(`^(\\s\\d+)?\\.${ext}$`))
             ) {
               return true;
             }
@@ -476,4 +474,8 @@ export class AccountDBHandler extends IndexedDBHandler {
       request.onerror = () => reject(request.error);
     });
   }
+}
+
+export function normalizePathPart(fileName: string): string {
+  return fileName.normalize().replaceAll(/[\/\?:]/g, "!");
 }

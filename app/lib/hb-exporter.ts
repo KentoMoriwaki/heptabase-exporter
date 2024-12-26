@@ -1,10 +1,14 @@
 import { filterCardsAndJournalsByViews } from "@/lib/hb-filter";
 import { journalsFilter } from "@/lib/hb-journals-filter";
-import { filterCardsInWhiteboards } from "@/lib/hb-utils";
+import {
+  filterAssetsInWhiteboards,
+  filterCardsInWhiteboards,
+} from "@/lib/hb-utils";
 import {
   AccountDBHandler,
   FileEntity,
   JournalExportState,
+  normalizePathPart,
   TagsExportState,
   WhiteboardExportState,
 } from "@/lib/indexed-db";
@@ -16,6 +20,7 @@ export class HBExporter {
   private dbHandler: AccountDBHandler;
   private hbData: HBData;
   private exports: string[] = [];
+  private assets: FileEntity[] = [];
   private logs: string[] = [];
   private exportedFiles: Set<string> = new Set();
   private exportSettings: ExportSettings;
@@ -50,6 +55,40 @@ export class HBExporter {
       for (const card of cards) {
         await this.exportCard(card);
       }
+      if (!this.exportSettings.includeLinkedFiles) continue;
+      const assets = filterAssetsInWhiteboards(
+        new Set([exportState.whiteboardId]),
+        this.hbData,
+        {
+          includeSections:
+            exportState.selectType === "include"
+              ? exportState.selectedIds
+              : undefined,
+          excludeSections:
+            exportState.selectType === "exclude"
+              ? exportState.selectedIds
+              : undefined,
+        }
+      );
+      for (const asset of assets) {
+        const fileName = asset.file.name.substring(
+          0,
+          asset.file.name.indexOf(".")
+        );
+        const ext = asset.file.name.substring(fileName.length + 1);
+        const path = `Whiteboard/${normalizePathPart(
+          asset.whiteboard.name
+        )}-assets/${normalizePathPart(fileName)}`;
+        const files = await this.dbHandler.getFilesByTitle(path, {
+          exact: false,
+          ext,
+        });
+        for (const file of files) {
+          if (file.size === asset.file.size) {
+            this.exportAssetFile(file);
+          }
+        }
+      }
     }
   }
 
@@ -75,7 +114,7 @@ export class HBExporter {
 
   private async exportCard(card: HBCard) {
     let files = await this.dbHandler.getFilesByTitle(
-      `Card Library/${card.title}`,
+      `Card Library/${normalizePathPart(card.title)}`,
       {
         exact: false,
       }
@@ -103,7 +142,7 @@ export class HBExporter {
 
   private async exportJournal(journal: HBJournal) {
     const files = await this.dbHandler.getFilesByTitle(
-      `Journal/${journal.date}.md`,
+      `Journal/${normalizePathPart(journal.date)}.md`,
       { exact: true }
     );
     if (files.length === 0) {
@@ -128,37 +167,72 @@ export class HBExporter {
     const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
     const content = new TextDecoder().decode(file.content);
     this.exports.push(`---\n\n${commentsStr}\n\n${content}\n\n`);
-    if (this.exportSettings.includeLinkedCards) {
+    if (
+      this.exportSettings.includeLinkedCards ||
+      this.exportSettings.includeLinkedFiles
+    ) {
       const likedFiles = findLinkedFiles(file);
       this.processLinkedFiles(likedFiles);
+    }
+  }
+
+  private exportAssetFile(file: FileEntity) {
+    if (this.exportedFiles.has(file.path)) return;
+    this.exportedFiles.add(file.path);
+    const type = file.type.match(/image|img/)
+      ? "image"
+      : file.type.match(/audio|video/)
+      ? "audio/video"
+      : "other";
+    if (
+      (type === "image" && this.exportSettings.includeImages) ||
+      (type === "audio/video" && this.exportSettings.includeAudioVideo) ||
+      (type === "other" && this.exportSettings.includeOtherFiles)
+    ) {
+      this.assets.push(file);
     }
   }
 
   private async processLinkedFiles(linkedFiles: string[]) {
     for (const linkedFile of linkedFiles) {
       if (this.exportedFiles.has(linkedFile)) continue;
-      const dir = linkedFile.split("/")[0];
-      switch (dir) {
-        case "Card Library":
-        case "Journal": {
-          const [file] = await this.dbHandler.getFilesByTitle(linkedFile, {
-            exact: true,
-          });
-          if (file) {
-            this.exportFile(file, { File: file.path });
-          }
-          break;
+      const [dir, subdir] = linkedFile.split("/");
+      if (
+        this.exportSettings.includeLinkedFiles &&
+        subdir.endsWith("-assets")
+      ) {
+        const [file] = await this.dbHandler.getFilesByTitle(linkedFile, {
+          exact: true,
+        });
+        if (file) {
+          this.exportAssetFile(file);
         }
-        default: {
-          this.logs.push(
-            `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`
-          );
+      } else if (this.exportSettings.includeLinkedCards) {
+        switch (dir) {
+          case "Card Library":
+          case "Journal": {
+            const [file] = await this.dbHandler.getFilesByTitle(linkedFile, {
+              exact: true,
+            });
+            if (file) {
+              this.exportFile(file, { File: file.path });
+            }
+            break;
+          }
+          default: {
+            this.logs.push(
+              `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`
+            );
+          }
         }
       }
     }
   }
 
   getExportData() {
+    if (this.assets.length > 0) {
+      console.log("Exporting assets is not supported yet.", this.assets);
+    }
     return this.exports.join("");
   }
 

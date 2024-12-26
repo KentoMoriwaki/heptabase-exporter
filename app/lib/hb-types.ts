@@ -172,7 +172,13 @@ export interface HBConnection {
 export interface HBFile {
   id: string;
   name: string;
-  type: string;
+  type: string; // e.g., "image/png", "image/svg+xml"
+  size: number;
+  category: "user";
+  metadata: {
+    width: number;
+    height: number;
+  };
   createdTime: string;
   lastEditedTime: string;
   createdBy: string;
