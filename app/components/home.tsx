@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Brain, Shield, Upload, History } from "lucide-react";
-import { useDropzone } from "react-dropzone";
-import { Link, useNavigate } from "react-router";
+import { HBData } from "@/lib/hb-types";
 import {
   AccountEntity,
   getIDBHandler,
   getIDBMasterHandler,
 } from "@/lib/indexed-db";
-import { HBData } from "@/lib/hb-types";
 import { cn } from "@/lib/utils";
+import { Brain, FileText, History, Shield, Upload, Zap } from "lucide-react";
+import { useDropzone } from "react-dropzone";
+import { Link, useNavigate } from "react-router";
+import { Header } from "./header";
 
 export function Home({ accounts }: { accounts: AccountEntity[] }) {
   const navigate = useNavigate();
@@ -70,14 +71,7 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
         isDragActive && "bg-primary/10 border-2 border-dashed border-primary"
       )}
     >
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-center">
-            Bundle My Heptabase
-          </h1>
-        </div>
-      </header>
-
+      <Header />
       {accounts.length > 0 && (
         <div className="w-full flex justify-center">
           <Card className="w-full max-w-xl mt-8 mb-4 mx-4">

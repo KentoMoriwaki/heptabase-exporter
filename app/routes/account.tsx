@@ -1,4 +1,10 @@
+import { ExportHistory } from "@/components/export-history";
 import { ExportLogModal } from "@/components/export-log-modal";
+import {
+  ExportSettings,
+  ExportSettingsModal,
+} from "@/components/export-setings-modal";
+import { Header } from "@/components/header";
 import { JournalExport } from "@/components/journal-export";
 import { Tabs, TabsContent, TabsTrigger } from "@/components/tabs";
 import { TagsExport } from "@/components/tags-export";
@@ -31,13 +37,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Route } from "./+types/account";
-import { ExportHistory } from "@/components/export-history";
-import {
-  ExportSettings,
-  ExportSettingsModal,
-} from "@/components/export-setings-modal";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -327,15 +328,7 @@ function AccountInner({
         isDragActive && "bg-primary/10 border-2 border-dashed border-primary"
       )}
     >
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-center">
-            <Link to="/home" className="">
-              Bundle My Heptabase
-            </Link>
-          </h1>
-        </div>
-      </header>
+      <Header />
       <div className={cn("container mx-auto p-4")}>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Export</h1>
