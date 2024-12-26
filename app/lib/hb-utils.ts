@@ -6,6 +6,8 @@ import {
   HBFile,
   HBFilterConfig,
   HBMediaElement,
+  HBPdfCard,
+  HBPdfCardInstance,
   HBWhiteboard,
   HBWhiteboardInstance,
 } from "./hb-types";
@@ -131,6 +133,8 @@ export function filterAssetsInWhiteboards(
   whiteboardIds: Set<string>,
   {
     mediaElements,
+    pdfCards,
+    pdfCardInstances,
     sectionObjectRelations,
     whiteBoardList,
     files,
@@ -162,10 +166,19 @@ export function filterAssetsInWhiteboards(
   files.forEach((file) => {
     filesById[file.id] = file;
   });
+  const pdfInstances: Record<string, HBPdfCardInstance> = {}; // pdfCardId -> pdfInstance
+  pdfCardInstances.forEach((instance) => {
+    pdfInstances[instance.pdfCardId] = instance;
+  });
 
   const results: Record<
     string,
-    { media?: HBMediaElement; whiteboard: HBWhiteboard; file: HBFile }
+    {
+      media?: HBMediaElement;
+      pdf?: HBPdfCard;
+      whiteboard: HBWhiteboard;
+      file: HBFile;
+    }
   > = {}; // mediaId,pdfId -> { media, pdf, whiteboard }
 
   mediaElements
@@ -194,6 +207,38 @@ export function filterAssetsInWhiteboards(
         results[media.id] = { media, whiteboard, file };
       }
       // TODO: Process non-File assets (e.g. YouTube)
+    });
+
+  pdfCards
+    .filter((pdf) => {
+      const instance = pdfInstances[pdf.id];
+      if (!instance) {
+        return false;
+      }
+      if (!whiteboardIds.has(instance.whiteboardId)) {
+        return false;
+      }
+      if (options.includeSections) {
+        return (
+          objectSections[instance.id] &&
+          options.includeSections.includes(objectSections[instance.id])
+        );
+      }
+      if (options.excludeSections) {
+        return (
+          objectSections[instance.id] &&
+          !options.excludeSections.includes(objectSections[instance.id])
+        );
+      }
+      return true;
+    })
+    .forEach((pdf) => {
+      const instance = pdfInstances[pdf.id]!;
+      const whiteboard = whiteboards[instance.whiteboardId]!;
+      const file = pdf.fileId ? filesById[pdf.fileId] : null;
+      if (file) {
+        results[pdf.id] = { whiteboard, file };
+      }
     });
 
   return Object.values(results);

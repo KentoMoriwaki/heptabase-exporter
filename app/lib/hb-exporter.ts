@@ -76,10 +76,14 @@ export class HBExporter {
           0,
           asset.file.name.indexOf(".")
         );
-        const ext = asset.file.name.substring(fileName.length + 1);
-        const path = `Whiteboard/${normalizePathPart(
-          asset.whiteboard.name
-        )}-assets/${normalizePathPart(fileName)}`;
+        const ext = asset.media
+          ? asset.file.name.substring(fileName.length + 1)
+          : "pdf";
+        const path = asset.media
+          ? `Whiteboard/${normalizePathPart(
+              asset.whiteboard.name
+            )}-assets/${normalizePathPart(fileName)}`
+          : `Card Library/${normalizePathPart(fileName)}`;
         const files = await this.dbHandler.getFilesByTitle(path, {
           exact: false,
           ext,
@@ -133,7 +137,7 @@ export class HBExporter {
       );
     }
     for (const file of files) {
-      this.exportFile(file, {
+      this.exportCardFile(file, {
         "Card Title": card.title,
         "Created At": formatDate(card.createdTime),
         File: file.path,
@@ -152,14 +156,14 @@ export class HBExporter {
     }
 
     for (const file of files) {
-      this.exportFile(file, {
+      this.exportCardFile(file, {
         "Journal Date": journal.date,
         File: file.path,
       });
     }
   }
 
-  private exportFile(file: FileEntity, meta: Record<string, string>) {
+  private exportCardFile(file: FileEntity, meta: Record<string, string>) {
     if (this.exportedFiles.has(file.path)) return;
     this.exportedFiles.add(file.path);
     const comments = Object.entries(meta).map(
@@ -197,10 +201,13 @@ export class HBExporter {
   private async processLinkedFiles(linkedFiles: string[]) {
     for (const linkedFile of linkedFiles) {
       if (this.exportedFiles.has(linkedFile)) continue;
-      const [dir, subdir] = linkedFile.split("/");
+      const parts = linkedFile.split("/");
+      const dir = parts[0];
+      const subdir = parts.length > 2 ? parts[1] : "";
+      const file = parts[parts.length - 1];
       if (
         this.exportSettings.includeLinkedFiles &&
-        subdir.endsWith("-assets")
+        (subdir.endsWith("-assets") || file.endsWith(".pdf"))
       ) {
         const [file] = await this.dbHandler.getFilesByTitle(linkedFile, {
           exact: true,
@@ -216,7 +223,7 @@ export class HBExporter {
               exact: true,
             });
             if (file) {
-              this.exportFile(file, { File: file.path });
+              this.exportCardFile(file, { File: file.path });
             }
             break;
           }

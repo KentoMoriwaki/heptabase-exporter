@@ -34,8 +34,8 @@ export interface HBData {
   mindMapTextNodes: HBMindMapTextNode[];
   mindMaps: HBMindMap[];
   objectPropertyRelations: HBObjectPropertyRelation[];
-  pdfCardInstances: any[];
-  pdfCards: any[];
+  pdfCardInstances: HBPdfCardInstance[];
+  pdfCards: HBPdfCard[];
   preferences: HBPreferences;
   properties: HBProperty[];
   sectionObjectRelations: HBSectionObjectRelation[];
@@ -52,6 +52,41 @@ export interface HBData {
   webElements: any[];
   whiteboardInstances: HBWhiteboardInstance[];
   workspaces: HBWorkspace[];
+}
+
+export interface HBPdfCard {
+  id: string;
+  title: string;
+  fileId: string;
+  propertiesConfig: any[];
+  metadata: {
+    snapshot: Record<string, string>;
+    lastReadPosition: Record<string, any>;
+  };
+  isTrashed: boolean;
+  createdTime: string;
+  lastUsedTime: string;
+  lastEditedTime: string;
+  createdBy: string;
+  spaceId: string;
+}
+
+export interface HBPdfCardInstance {
+  width: number;
+  height: number;
+  id: string;
+  whiteboardId: string;
+  pdfCardId: string;
+  color: string;
+  currentPage: number;
+  x: number;
+  y: number;
+  isFolded: boolean;
+  createdTime: string;
+  lastEditedTime: string;
+  createdBy: string;
+  spaceId: string;
+  sourceSpaceId: string;
 }
 
 export interface HBMapState {
