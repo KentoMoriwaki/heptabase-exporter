@@ -26,7 +26,9 @@ export function Tabs({
 }: TabsProps) {
   const context = useTabsContext();
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : context.value ?? defaultValue;
+  const value = isControlled
+    ? controlledValue
+    : (context.value ?? defaultValue);
   const setValue = React.useCallback(
     (newValue: string) => {
       if (!isControlled) {
@@ -34,7 +36,7 @@ export function Tabs({
       }
       onValueChange?.(newValue);
     },
-    [context, isControlled, onValueChange]
+    [context, isControlled, onValueChange],
   );
 
   return (
@@ -75,7 +77,7 @@ export function TabsTrigger({
         isSelected
           ? "bg-background text-foreground shadow-sm"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        className
+        className,
       )}
       {...props}
     >

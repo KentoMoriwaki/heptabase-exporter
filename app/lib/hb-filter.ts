@@ -10,7 +10,7 @@ export function filterCardsAndJournals(
     HBData,
     "cardList" | "journalList" | "objectPropertyRelations" | "properties"
   >,
-  filterConfig: HBFilterConfig
+  filterConfig: HBFilterConfig,
 ): Array<HBCard | HBJournal> {
   // Map property values by card ID
   //
@@ -30,7 +30,7 @@ export function filterCardsAndJournals(
   return [...cardList, ...journalList].filter((card) => {
     const results = filterConfig.rules.map((rule) => {
       const cardProps = cardProperties.get(
-        "title" in card ? card.id : card.date
+        "title" in card ? card.id : card.date,
       );
       const value =
         rule.field === "title"
@@ -47,7 +47,7 @@ export function filterCardsAndJournals(
         value,
         rule.operator,
         rule.value,
-        propertyType as PropertyType
+        propertyType as PropertyType,
       );
     });
 
@@ -66,7 +66,7 @@ export function filterCardsAndJournalsByViews(
     | "objectPropertyRelations"
     | "properties"
   >,
-  viewIds: string[]
+  viewIds: string[],
 ): Array<HBCard | HBJournal> {
   const { collectionViews } = data;
   // Create a map to get views by view ID
@@ -106,7 +106,7 @@ function evaluateValue(
   value: any,
   operator: string,
   filterValue: any,
-  propertyType: PropertyType
+  propertyType: PropertyType,
 ): boolean {
   // Operators for empty check
   if (operator === "isEmpty") {
@@ -156,7 +156,7 @@ function evaluateValue(
 function evaluateTextValue(
   value: string | null | undefined,
   operator: string,
-  filterValue: string | null
+  filterValue: string | null,
 ): boolean {
   // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
@@ -191,7 +191,7 @@ function evaluateTextValue(
 function evaluateNumberValue(
   value: number | null | undefined,
   operator: string,
-  filterValue: number | null
+  filterValue: number | null,
 ): boolean {
   // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
@@ -221,7 +221,7 @@ function evaluateNumberValue(
 function evaluateSelectValue(
   value: string | null | undefined,
   operator: string,
-  filterValue: string | null
+  filterValue: string | null,
 ): boolean {
   // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
@@ -241,7 +241,7 @@ function evaluateSelectValue(
 function evaluateMultiSelectValue(
   value: string[] | null | undefined,
   operator: string,
-  filterValue: string | null
+  filterValue: string | null,
 ): boolean {
   // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
@@ -263,7 +263,7 @@ function evaluateMultiSelectValue(
 function evaluateCheckboxValue(
   value: boolean | null | undefined,
   operator: string,
-  filterValue: boolean | null
+  filterValue: boolean | null,
 ): boolean {
   // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {
@@ -285,7 +285,7 @@ function evaluateCheckboxValue(
 function evaluateRelationValue(
   value: string[] | null | undefined,
   operator: string,
-  filterValue: string[] | null
+  filterValue: string[] | null,
 ): boolean {
   // If filterValue is empty for operators that use filterValue, return true
   if (filterValue === null || filterValue === undefined) {

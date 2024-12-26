@@ -61,7 +61,7 @@ export async function getIDBMasterHandler(): Promise<MasterDBHandler> {
 }
 
 export async function getIDBHandler(
-  accountId: string
+  accountId: string,
 ): Promise<AccountDBHandler> {
   const dbName = `${DBNamePrefix}_${accountId}`;
   return _getIDBHandler(dbName, 3, AccountDBHandler);
@@ -70,7 +70,7 @@ export async function getIDBHandler(
 async function _getIDBHandler<T extends IndexedDBHandler>(
   dbName: string,
   version: number,
-  HandlerClass: new (dbName: string, version: number) => T
+  HandlerClass: new (dbName: string, version: number) => T,
 ): Promise<T> {
   const cachedRef = handlerCache.get(dbName);
   if (cachedRef) {
@@ -152,8 +152,8 @@ export class MasterDBHandler extends IndexedDBHandler {
         name: existingAccount
           ? existingAccount.name
           : currentAccounts.length === 0
-          ? "Default Account"
-          : `Account ${currentAccounts.length + 1}`,
+            ? "Default Account"
+            : `Account ${currentAccounts.length + 1}`,
         folderName,
         lastOpened: Date.now(),
         lastUploaded: Date.now(),
@@ -166,7 +166,7 @@ export class MasterDBHandler extends IndexedDBHandler {
   }
 
   async updateAccount(
-    account: Partial<AccountEntity> & { id: string }
+    account: Partial<AccountEntity> & { id: string },
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction("accounts", "readwrite");
@@ -247,8 +247,8 @@ export class AccountDBHandler extends IndexedDBHandler {
         if (!file) {
           reject(
             new Error(
-              'The directory does not contain a file named "All-Data.json".'
-            )
+              'The directory does not contain a file named "All-Data.json".',
+            ),
           );
         } else {
           const json = new TextDecoder().decode(file.content);
@@ -294,7 +294,7 @@ export class AccountDBHandler extends IndexedDBHandler {
 
   getFilesByTitle(
     title: string,
-    { exact, ext = "md" }: { exact: boolean; ext?: string }
+    { exact, ext = "md" }: { exact: boolean; ext?: string },
   ): Promise<FileEntity[]> {
     return new Promise((resolve, reject) => {
       const parts = title.split("/").map(normalizePathPart);
@@ -359,14 +359,14 @@ export class AccountDBHandler extends IndexedDBHandler {
         const request = store.index("date").getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
-      }
+      },
     );
 
     // Exclude starred items and delete old items exceeding MAX_HISTORY_ITEMS
     const unstarredHistories = histories.filter((h) => !h.isStarred);
     const deleteCount = Math.max(
       0,
-      unstarredHistories.length - MAX_HISTORY_ITEMS
+      unstarredHistories.length - MAX_HISTORY_ITEMS,
     );
 
     if (deleteCount > 0) {

@@ -38,7 +38,7 @@ export function buildWhiteboardTree({
   const instanceMap: Record<string, HBWhiteboardTree> = {};
   whiteBoardList.forEach((whiteboard) => {
     const instance = whiteboardInstances.find(
-      (ins) => ins.whiteboardId === whiteboard.id
+      (ins) => ins.whiteboardId === whiteboard.id,
     );
     if (instance) {
       instanceMap[whiteboard.id] = {
@@ -58,11 +58,11 @@ export function buildWhiteboardTree({
   whiteboardInstances.forEach((instance) => {
     if (instance.containerType === "whiteboard") {
       const parentInstance = whiteboardInstances.find(
-        (parent) => parent.whiteboardId === instance.containerId
+        (parent) => parent.whiteboardId === instance.containerId,
       );
       if (parentInstance) {
         instanceMap[parentInstance.whiteboardId].children.push(
-          instanceMap[instance.whiteboardId]
+          instanceMap[instance.whiteboardId],
         );
       } else {
         if (!instanceMap[instance.whiteboardId].isTrashed) {
@@ -89,7 +89,7 @@ export function filterCardsInWhiteboards(
   options: {
     includeSections?: string[];
     excludeSections?: string[];
-  }
+  },
 ): HBCard[] {
   const instanceMap: Record<string, HBCardInstance> = {};
   cardInstances.forEach((instance) => {
@@ -149,7 +149,7 @@ export function filterAssetsInWhiteboards(
   options: {
     includeSections?: string[];
     excludeSections?: string[];
-  }
+  },
 ) {
   const objectSections: Record<string, string> = {}; // mediaId,pdfId -> sectionId
   sectionObjectRelations.forEach((relation) => {
@@ -253,7 +253,7 @@ export function getCardsInSection(sectionId: string, data: HBData): string[] {
       .filter(
         (relation) =>
           relation.sectionId === currentSectionId &&
-          relation.objectType === "cardInstance"
+          relation.objectType === "cardInstance",
       )
       .map((relation) => relation.objectId);
 
@@ -261,7 +261,7 @@ export function getCardsInSection(sectionId: string, data: HBData): string[] {
       .filter(
         (relation) =>
           relation.sectionId === currentSectionId &&
-          relation.objectType === "section"
+          relation.objectType === "section",
       )
       .map((relation) => relation.objectId);
 
@@ -278,13 +278,13 @@ export function getCardsInSection(sectionId: string, data: HBData): string[] {
 // Function to get sections contained in the specified whiteboard
 function getSectionsInWhiteboard(
   whiteboardId: string,
-  data: Pick<HBData, "sections" | "sectionObjectRelations">
+  data: Pick<HBData, "sections" | "sectionObjectRelations">,
 ): SectionNode[] {
   const { sections, sectionObjectRelations } = data;
 
   // Get sections belonging to the specified whiteboard
   const whiteboardSections = sections.filter(
-    (section) => section.whiteboardId === whiteboardId
+    (section) => section.whiteboardId === whiteboardId,
   );
 
   // Map sections by section ID
@@ -313,8 +313,8 @@ function getSectionsInWhiteboard(
     (section) =>
       !sectionObjectRelations.some(
         (relation) =>
-          relation.objectType === "section" && relation.objectId === section.id
-      )
+          relation.objectType === "section" && relation.objectId === section.id,
+      ),
   );
 
   return rootSections.map((section) => sectionMap[section.id]);
@@ -369,7 +369,7 @@ export function aggeregateToTagGroups(data: HBData): AggregatedTagGroup[] {
         // Get all views for these collections
         const views = collectionIds.flatMap(
           (collectionId) =>
-            collectionViewsByCollectionId.get(collectionId) || []
+            collectionViewsByCollectionId.get(collectionId) || [],
         );
 
         return {
@@ -396,7 +396,7 @@ export function aggeregateToTagGroups(data: HBData): AggregatedTagGroup[] {
     .map((tag) => {
       const collectionIds = collectionsByTagId.get(tag.id) || [];
       const views = collectionIds.flatMap(
-        (collectionId) => collectionViewsByCollectionId.get(collectionId) || []
+        (collectionId) => collectionViewsByCollectionId.get(collectionId) || [],
       );
 
       return {

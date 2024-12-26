@@ -29,7 +29,7 @@ export class HBExporter {
   constructor(
     dbHandler: AccountDBHandler,
     hbData: HBData,
-    exportSettings: ExportSettings
+    exportSettings: ExportSettings,
   ) {
     this.dbHandler = dbHandler;
     this.hbData = hbData;
@@ -51,7 +51,7 @@ export class HBExporter {
             exportState.selectType === "exclude"
               ? exportState.selectedIds
               : undefined,
-        }
+        },
       );
       for (const card of cards) {
         await this.exportCard(card);
@@ -69,19 +69,19 @@ export class HBExporter {
             exportState.selectType === "exclude"
               ? exportState.selectedIds
               : undefined,
-        }
+        },
       );
       for (const asset of assets) {
         const fileName = asset.file.name.substring(
           0,
-          asset.file.name.indexOf(".")
+          asset.file.name.indexOf("."),
         );
         const ext = asset.media
           ? asset.file.name.substring(fileName.length + 1)
           : "pdf";
         const path = asset.media
           ? `Whiteboard/${normalizePathPart(
-              asset.whiteboard.name
+              asset.whiteboard.name,
             )}-assets/${normalizePathPart(fileName)}`
           : `Card Library/${normalizePathPart(fileName)}`;
         const files = await this.dbHandler.getFilesByTitle(path, {
@@ -122,7 +122,7 @@ export class HBExporter {
       `Card Library/${normalizePathPart(card.title)}`,
       {
         exact: false,
-      }
+      },
     );
     if (files.length === 0) {
       this.logs.push(`No file found for card "${card.title}"`);
@@ -133,7 +133,7 @@ export class HBExporter {
       this.logs.push(
         `Multiple files found for card "${card.title}". Using all files. ${files
           .map((file) => file.path)
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
     for (const file of files) {
@@ -148,7 +148,7 @@ export class HBExporter {
   private async exportJournal(journal: HBJournal) {
     const files = await this.dbHandler.getFilesByTitle(
       `Journal/${normalizePathPart(journal.date)}.md`,
-      { exact: true }
+      { exact: true },
     );
     if (files.length === 0) {
       this.logs.push(`No file found for journal "${journal.date}"`);
@@ -167,7 +167,7 @@ export class HBExporter {
     if (this.exportedFiles.has(file.path)) return;
     this.exportedFiles.add(file.path);
     const comments = Object.entries(meta).map(
-      ([key, value]) => `${key}: ${value}`
+      ([key, value]) => `${key}: ${value}`,
     );
     const commentsStr = `<!--\n${comments.join("\n")}\n-->`;
     const content = new TextDecoder().decode(file.content);
@@ -187,8 +187,8 @@ export class HBExporter {
     const type = file.type.match(/image|img/)
       ? "image"
       : file.type.match(/audio|video/)
-      ? "audio/video"
-      : "other";
+        ? "audio/video"
+        : "other";
     if (
       (type === "image" && this.exportSettings.includeImages) ||
       (type === "audio/video" && this.exportSettings.includeAudioVideo) ||
@@ -229,7 +229,7 @@ export class HBExporter {
           }
           default: {
             this.logs.push(
-              `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`
+              `Linked file "${linkedFile}" is not in "Card Library" or "Journal".`,
             );
           }
         }
@@ -281,7 +281,7 @@ export class HBExporter {
           } else {
             resolve(data);
           }
-        }
+        },
       );
     });
   }
@@ -296,7 +296,7 @@ export class HBExporter {
 
   private findBestMatchedFiles(
     files: FileEntity[],
-    content: any
+    content: any,
   ): FileEntity[] {
     if (files.length === 0) return [];
     if (files.length === 1) return files;
@@ -348,11 +348,11 @@ function findLinkedFiles(file: FileEntity) {
 }
 function resolveAbsolutePath(
   currentFilePath: string,
-  relativePath: string
+  relativePath: string,
 ): string {
   const currentDir = currentFilePath.substring(
     0,
-    currentFilePath.lastIndexOf("/")
+    currentFilePath.lastIndexOf("/"),
   );
   const segments = relativePath.split("/");
   const resultSegments = currentDir.split("/");

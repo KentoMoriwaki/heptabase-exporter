@@ -24,7 +24,7 @@ interface WhiteboardTreeProps {
   exportStates: WhiteboardExportState[];
   onExportStateChange: (
     whiteboardId: string,
-    state: WhiteboardExportState
+    state: WhiteboardExportState,
   ) => void;
 }
 
@@ -35,18 +35,18 @@ export function WhiteboardTree({
   onExportStateChange,
 }: WhiteboardTreeProps) {
   const isChecked = exportStates.some(
-    (state) => state.whiteboardId === tree.id && state.enabled
+    (state) => state.whiteboardId === tree.id && state.enabled,
   );
 
   const updateExport = (
     whiteboardId: string,
     updateFn: (
       currentExport: WhiteboardExportState,
-      whiteboard: HBWhiteboardTree
-    ) => WhiteboardExportState
+      whiteboard: HBWhiteboardTree,
+    ) => WhiteboardExportState,
   ) => {
     const found = exportStates.find(
-      (state) => state.whiteboardId === whiteboardId
+      (state) => state.whiteboardId === whiteboardId,
     );
     const whiteboard = findWhiteboardbyId(whiteboardId);
     if (!whiteboard) return;
@@ -62,8 +62,8 @@ export function WhiteboardTree({
             selectType: "all",
             selectedIds: [],
           },
-          whiteboard
-        )
+          whiteboard,
+        ),
       );
     }
   };
@@ -71,7 +71,7 @@ export function WhiteboardTree({
   const findWhiteboardbyId = (id: string) => {
     // Find whiteboard from whiteboardTree
     const findWhiteboard = (
-      tree: HBWhiteboardTree
+      tree: HBWhiteboardTree,
     ): HBWhiteboardTree | null => {
       if (tree.id === id) {
         return tree;
@@ -93,7 +93,7 @@ export function WhiteboardTree({
       const selectedIds = toggleNodeSelection(
         sectionId,
         whiteboard.sections,
-        currentExport.selectedIds
+        currentExport.selectedIds,
       );
       return { ...currentExport, selectedIds };
     });
@@ -278,7 +278,7 @@ function SectionTree(props: {
 function toggleNodeSelection(
   nodeId: string,
   tree: SectionNode[],
-  selectedIds: string[]
+  selectedIds: string[],
 ): string[] {
   // Helper function to check if a node is selected
   function isSelected(id: string): boolean {
@@ -305,7 +305,7 @@ function toggleNodeSelection(
       const parent = findNodeById(tree, parentId);
       if (parent) {
         const someChildrenSelected = parent.children.some((child) =>
-          isSelected(child.id)
+          isSelected(child.id),
         );
 
         if (someChildrenSelected) {
@@ -330,7 +330,7 @@ function toggleNodeSelection(
   // Recursive function to traverse the tree and toggle the node
   function traverseAndToggle(
     node: SectionNode,
-    parentId: string | null
+    parentId: string | null,
   ): boolean {
     if (node.id === nodeId) {
       if (isSelected(node.id)) {

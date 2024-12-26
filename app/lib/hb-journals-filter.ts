@@ -25,7 +25,7 @@ export type JournalFilter =
 
 export function journalsFilter(
   { journalList }: Pick<HBData, "journalList">,
-  filter: JournalFilter
+  filter: JournalFilter,
 ) {
   const now = new Date();
   let startDate: Date | null = null;
