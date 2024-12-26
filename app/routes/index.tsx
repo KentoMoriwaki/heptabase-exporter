@@ -1,6 +1,7 @@
 import { Home } from "@/components/home";
 import { getIDBMasterHandler } from "@/lib/indexed-db";
 import type { Route } from "./+types/home";
+import { redirect } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -15,6 +16,9 @@ export function meta({}: Route.MetaArgs) {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const masterDB = await getIDBMasterHandler();
   const accounts = await masterDB.getAccounts();
+  if (accounts.length === 1) {
+    return redirect(`/accounts/${accounts[0].id}`);
+  }
   return { accounts };
 }
 

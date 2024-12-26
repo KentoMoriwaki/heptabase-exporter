@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Route } from "./+types/account";
 import { ExportHistory } from "@/components/export-history";
 import {
@@ -330,7 +330,9 @@ function AccountInner({
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-center">
-            Bundle My Heptabase
+            <Link to="/home" className="">
+              Bundle My Heptabase
+            </Link>
           </h1>
         </div>
       </header>
