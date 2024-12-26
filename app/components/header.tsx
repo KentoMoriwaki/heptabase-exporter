@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { ComponentProps } from "react";
+import { Link } from "react-router";
 
 export function Header() {
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-center">Bundle My Heptabase</h1>
+        <h1 className="text-xl font-bold text-center">
+          <Link to="/home">Bundle My Heptabase</Link>
+        </h1>
         <Button variant="ghost" size="icon" asChild>
           <a
             href="https://github.com/KentoMoriwaki/heptabase-exporter"
