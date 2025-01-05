@@ -1,3 +1,4 @@
+import { useCallback, useLayoutEffect, useState } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,10 +6,18 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteLoaderData,
 } from "react-router";
-
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
+import {
+  getOverriddenThemeMode,
+  getThemeMode,
+  saveThemeMode,
+  ThemeMode,
+  ThemeModeProvider,
+  useSystemThemeMode,
+} from "./lib/theme";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -24,9 +33,15 @@ export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
 ];
 
+export function clientLoader() {
+  const initialMode = getThemeMode();
+  return { initialMode };
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useRouteLoaderData<{ initialMode: ThemeMode }>("root");
   return (
-    <html lang="en">
+    <html lang="en" className={data?.initialMode === "dark" ? "dark" : ""}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -43,7 +58,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  const [overriddenMode, setOverriddenMode] = useState<ThemeMode | null>(
+    getOverriddenThemeMode,
+  );
+  const systemMode = useSystemThemeMode();
+
+  const setMode = useCallback((newThemeMode: ThemeMode | null) => {
+    saveThemeMode(newThemeMode);
+    setOverriddenMode(newThemeMode);
+  }, []);
+
+  useLayoutEffect(() => {
+    const newMode = overriddenMode ?? systemMode;
+    console.log("Setting theme mode to", newMode);
+    document.documentElement.classList.toggle("dark", newMode === "dark");
+  }, [overriddenMode, systemMode]);
+
+  return (
+    <ThemeModeProvider
+      overriddenMode={overriddenMode}
+      systemMode={systemMode}
+      setMode={setMode}
+    >
+      <Outlet />
+    </ThemeModeProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
