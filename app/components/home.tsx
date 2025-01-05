@@ -11,9 +11,13 @@ import { Brain, FileText, History, Shield, Upload, Zap } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { Link, useNavigate } from "react-router";
 import { Header } from "./header";
+import { useState } from "react";
+import { ExportInstructionModal } from "./export-instruction-modal";
 
 export function Home({ accounts }: { accounts: AccountEntity[] }) {
   const navigate = useNavigate();
+
+  const [isInstructionModalOpen, setIsInstructionModalOpen] = useState(false);
 
   const onDrop = async (acceptedFiles: Array<File & { path?: string }>) => {
     try {
@@ -28,7 +32,7 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
       }
       if (!allDataFile) {
         throw new Error(
-          'The directory does not contain a file named "All-Data.json".'
+          'The directory does not contain a file named "All-Data.json".',
         );
       }
       const allData: HBData = JSON.parse(await allDataFile.text());
@@ -37,7 +41,7 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
       const allDataPath = allDataFile.path || allDataFile.webkitRelativePath;
       const rootDirPath = allDataPath.slice(
         0,
-        allDataPath.length - "All-Data.json".length
+        allDataPath.length - "All-Data.json".length,
       );
       // Remove slashes and dots at the beginning and the end from the folder name
       const folderName = rootDirPath.replace(/^[/.]+|[/.]+$/g, "");
@@ -68,7 +72,7 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
       {...rootProps}
       className={cn(
         "min-h-screen bg-background text-foreground flex flex-col",
-        isDragActive && "bg-primary/10 border-2 border-dashed border-primary"
+        isDragActive && "bg-primary/10 border-2 border-dashed border-primary",
       )}
     >
       <Header />
@@ -104,7 +108,7 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
             for AI Tools
           </h2>
           <p className="text-xl mb-6">
-            Safely organize exported data and
+            Safely organize your exported data and
             <br />
             easily use it with ChatGPT, Claude, NotebookLM, and more.
           </p>
@@ -132,11 +136,16 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
             })}
           />
           <Button size="lg" onClick={onClickDropzone}>
-            Start Exporting for Free
+            Start Bundling Heptabase Data
           </Button>
           <p className="mt-4 text-sm text-muted-foreground">
-            Note: If you have a ZIP file, please extract it before selecting the
-            folder.
+            <Button
+              variant={"link"}
+              className="h-auto p-0 text-muted-foreground font-medium"
+              onClick={() => setIsInstructionModalOpen(true)}
+            >
+              How to export your data from Heptabase?
+            </Button>
           </p>
         </div>
 
@@ -145,7 +154,7 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
           any server.
           <br />
           Your data remains safe at all times. This service is completely free,
-          with no hidden costs.
+          without any hidden costs.
         </p>
 
         <section className="w-full max-w-4xl">
@@ -203,6 +212,13 @@ export function Home({ accounts }: { accounts: AccountEntity[] }) {
           <p>&copy; 2024 Bundle My Heptabase</p>
         </div>
       </footer>
+
+      {isInstructionModalOpen && (
+        <ExportInstructionModal
+          isOpen={isInstructionModalOpen}
+          onClose={() => setIsInstructionModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
