@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
   useRouteLoaderData,
 } from "react-router";
+import { Analytics } from "@vercel/analytics/react";
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
 import {
@@ -52,6 +53,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Analytics />
       </body>
     </html>
   );
