@@ -14,7 +14,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
+    "start": "npx http-server ./build/client",
     "typecheck": "react-router typegen && tsc --build --noEmit",
     "lint": "eslint"
   },
