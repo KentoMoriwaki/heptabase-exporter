@@ -7,7 +7,7 @@ export function getGeneralMeta() {
     },
     {
       property: "og:image",
-      content: "/og-image.png",
+      content: "https://bundle-my-heptabase.vercel.app/og-image.png",
     },
     {
       property: "og:title",
