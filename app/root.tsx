@@ -72,7 +72,6 @@ export default function App() {
 
   useLayoutEffect(() => {
     const newMode = overriddenMode ?? systemMode;
-    console.log("Setting theme mode to", newMode);
     document.documentElement.classList.toggle("dark", newMode === "dark");
   }, [overriddenMode, systemMode]);
 
