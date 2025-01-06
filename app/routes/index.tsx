@@ -1,17 +1,10 @@
 import { Home } from "@/components/home";
 import { getIDBMasterHandler } from "@/lib/indexed-db";
+import { getGeneralMeta } from "@/lib/meta";
 import { redirect } from "react-router";
 import type { Route } from "./+types/home";
 
-export function meta(_meta: Route.MetaArgs) {
-  return [
-    { title: "Bundle My Heptabase" },
-    {
-      name: "description",
-      content: "Safely organize exported data for AI tools.",
-    },
-  ];
-}
+export const meta: Route.MetaFunction = () => getGeneralMeta();
 
 export async function clientLoader(_args: Route.ClientLoaderArgs) {
   const masterDB = await getIDBMasterHandler();

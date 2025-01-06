@@ -1,13 +1,15 @@
 import { Home } from "@/components/home";
 import { getIDBMasterHandler } from "@/lib/indexed-db";
 import type { Route } from "./+types/home";
+import { getGeneralMeta } from "@/lib/meta";
 
-export function meta(_meta: Route.MetaArgs) {
+export const meta: Route.MetaFunction = () => getGeneralMeta();
+
+export function links() {
   return [
-    { title: "Bundle My Heptabase" },
     {
-      name: "description",
-      content: "Safely organize exported data for AI tools.",
+      rel: "canonical",
+      href: "https://bundle-my-heptabase.vercel.app/home",
     },
   ];
 }
