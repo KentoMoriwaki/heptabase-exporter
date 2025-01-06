@@ -25,5 +25,25 @@ export function getGeneralMeta() {
       property: "og:description",
       content: "Bundle your Heptabase data for AI tools.",
     },
+    {
+      property: "twitter:card",
+      content: "summary_large_image",
+    },
+    {
+      property: "twitter:image",
+      content: "https://bundle-my-heptabase.vercel.app/og-image.png",
+    },
+    {
+      property: "twitter:title",
+      content: "Bundle My Heptabase",
+    },
+    {
+      property: "twitter:description",
+      content: "Bundle your Heptabase data for AI tools.",
+    },
+    {
+      property: "og:site_name",
+      content: "Bundle My Heptabase",
+    },
   ];
 }
