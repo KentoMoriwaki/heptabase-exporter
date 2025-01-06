@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ThemeModeContext } from "@/lib/theme";
 import { Moon, Sun, SunMoon } from "lucide-react";
-import { ComponentProps, useContext } from "react";
+import { ComponentProps, use } from "react";
 import { Link } from "react-router";
 import {
   DropdownMenu,
@@ -36,7 +36,7 @@ export function Header() {
 }
 
 function ThemeModeButton() {
-  const { setMode } = useContext(ThemeModeContext);
+  const { setMode } = use(ThemeModeContext);
 
   return (
     <DropdownMenu>

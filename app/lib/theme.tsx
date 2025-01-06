@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, use, useEffect, useMemo, useState } from "react";
 
 export type ThemeMode = "dark" | "light";
 
@@ -87,6 +87,6 @@ export function ThemeModeProvider({
 }
 
 export function useThemeMode() {
-  const { overriddenMode, systemMode } = useContext(ThemeModeContext);
+  const { overriddenMode, systemMode } = use(ThemeModeContext);
   return overriddenMode ?? systemMode;
 }
